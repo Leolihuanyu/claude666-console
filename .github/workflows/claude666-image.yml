@@ -1,0 +1,50 @@
+# Claude服务站: publish the console image built from the `claude666` branch.
+# Upstream's Docker workflows push to calciumion/new-api on Docker Hub and need
+# its secrets, so this fork publishes to GHCR with the built-in token instead.
+name: Publish claude666 image
+
+on:
+  push:
+    branches: [claude666]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: claude666-image
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The relay server is linux/amd64; deploy by the immutable sha tag.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/leolihuanyu/claude666-console:claude666-${{ steps.sha.outputs.short }}
+            ghcr.io/leolihuanyu/claude666-console:claude666-latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/Leolihuanyu/claude666-console
+            org.opencontainers.image.licenses=AGPL-3.0
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
