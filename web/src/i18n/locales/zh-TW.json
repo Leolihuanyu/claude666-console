@@ -7402,6 +7402,19 @@
     "Zhipu V4": "智譜 V4",
     "Zoom": "縮放",
     "By clicking sign in, you agree to our": "點擊登入即表示您同意我們的",
-    "By creating an account, you agree to our": "建立帳戶即表示您同意我們的"
+    "By creating an account, you agree to our": "建立帳戶即表示您同意我們的",
+    "Claude Code setup": "Claude Code setup",
+    "Create an API key to fill in the real setup": "Create an API key to fill in the real setup",
+    "Copy Claude Code setup": "Copy Claude Code setup",
+    "New accounts get trial credit; top up from ¥100": "New accounts get trial credit; top up from ¥100",
+    "One key per project keeps usage easy to read": "One key per project keeps usage easy to read",
+    "Set up Claude Code": "Set up Claude Code",
+    "Copy the Claude Code setup and run it in a terminal": "Copy the Claude Code setup and run it in a terminal",
+    "API address": "API address",
+    "Not created yet": "Not created yet",
+    "Available model": "Available model",
+    "Use Claude in three steps": "Use Claude in three steps",
+    "Top up, create a key, then point Claude Code at it. Balance and usage live here.": "Top up, create a key, then point Claude Code at it. Balance and usage live here.",
+    "Shortcuts": "Shortcuts"
   }
 }

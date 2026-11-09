@@ -73,6 +73,8 @@ interface IconBadgeProps {
 export function IconBadge(props: IconBadgeProps) {
   return (
     <span
+      data-slot='icon-badge'
+      data-tone={props.tone ?? 'neutral'}
       className={cn(
         iconBadgeVariants({ tone: props.tone, size: props.size }),
         props.className

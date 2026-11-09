@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
+import { SIMPLE_CONSOLE } from '@/lib/claude666'
+import { cn } from '@/lib/utils'
 
 import {
   LoadingSkeleton,
@@ -161,21 +163,23 @@ export function Pricing() {
   return (
     <PublicLayout showMainContainer={false}>
       <div className='relative'>
-        <div
-          aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
-          style={{
-            background: [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-            maskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-          }}
-        />
+        {!SIMPLE_CONSOLE && (
+          <div
+            aria-hidden
+            className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
+            style={{
+              background: [
+                'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
+                'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
+              ].join(', '),
+              maskImage:
+                'linear-gradient(to bottom, black 40%, transparent 100%)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, black 40%, transparent 100%)',
+            }}
+          />
+        )}
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
@@ -202,27 +206,34 @@ export function Pricing() {
             />
           </header>
 
-          <div className='grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]'>
-            <PricingSidebar
-              quotaTypeFilter={quotaTypeFilter}
-              endpointTypeFilter={endpointTypeFilter}
-              vendorFilter={vendorFilter}
-              groupFilter={groupFilter}
-              tagFilter={tagFilter}
-              onQuotaTypeChange={setQuotaTypeFilter}
-              onEndpointTypeChange={setEndpointTypeFilter}
-              onVendorChange={setVendorFilter}
-              onGroupChange={setGroupFilter}
-              onTagChange={setTagFilter}
-              vendors={vendors || []}
-              groups={availableGroups}
-              groupRatios={groupRatio}
-              tags={availableTags}
-              models={models || []}
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={clearFilters}
-              className='hover-scrollbar sticky top-20 hidden max-h-[calc(100dvh-6rem)] self-start overflow-y-auto xl:block'
-            />
+          <div
+            className={cn(
+              'grid gap-4',
+              !SIMPLE_CONSOLE && 'xl:grid-cols-[280px_minmax(0,1fr)]'
+            )}
+          >
+            {!SIMPLE_CONSOLE && (
+              <PricingSidebar
+                quotaTypeFilter={quotaTypeFilter}
+                endpointTypeFilter={endpointTypeFilter}
+                vendorFilter={vendorFilter}
+                groupFilter={groupFilter}
+                tagFilter={tagFilter}
+                onQuotaTypeChange={setQuotaTypeFilter}
+                onEndpointTypeChange={setEndpointTypeFilter}
+                onVendorChange={setVendorFilter}
+                onGroupChange={setGroupFilter}
+                onTagChange={setTagFilter}
+                vendors={vendors || []}
+                groups={availableGroups}
+                groupRatios={groupRatio}
+                tags={availableTags}
+                models={models || []}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+                className='hover-scrollbar sticky top-20 hidden max-h-[calc(100dvh-6rem)] self-start overflow-y-auto xl:block'
+              />
+            )}
 
             <main className='min-w-0 space-y-4'>
               <PricingToolbar

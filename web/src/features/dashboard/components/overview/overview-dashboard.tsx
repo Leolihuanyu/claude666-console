@@ -52,6 +52,7 @@ import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
+import { SIMPLE_CONSOLE, claudeCodeSetup } from '@/lib/claude666'
 import { handleServerError } from '@/lib/handle-server-error'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
@@ -170,20 +171,8 @@ function formatDisplayKey(key?: string): string {
   return `${key.slice(0, 7)}...${key.slice(-4)}`
 }
 
-function buildCurlCommand(args: {
-  endpoint: string
-  apiKey: string
-  model: string
-}): string {
-  return [
-    `curl ${args.endpoint} \\`,
-    '  -H "Content-Type: application/json" \\',
-    `  -H "Authorization: Bearer ${args.apiKey}" \\`,
-    `  -d '{"model":"${args.model}","messages":[{"role":"user","content":"Say hello in one sentence."}]}'`,
-  ].join('\n')
-}
-
 function SetupGuideBackdrop(props: { compact?: boolean }) {
+  if (SIMPLE_CONSOLE) return null
   return (
     <>
       <div
@@ -286,11 +275,10 @@ function RequestPreview(props: {
   const shouldReduceMotion = useReducedMotion()
   const [isCopying, setIsCopying] = useState(false)
   const { copyToClipboard } = useCopyToClipboard({ notify: false })
-  const previewCurl = buildCurlCommand({
-    endpoint: props.example.endpoint,
-    apiKey: props.example.displayKey,
-    model: props.example.model,
-  })
+  const previewCurl = claudeCodeSetup(
+    props.example.endpoint,
+    props.example.displayKey
+  )
   const previewLines = previewCurl.split('\n')
   const handleCopyRequest = async () => {
     if (!props.example.keyId || isCopying) return
@@ -304,11 +292,7 @@ function RequestPreview(props: {
         return
       }
 
-      const realCurl = buildCurlCommand({
-        endpoint: props.example.endpoint,
-        apiKey: `sk-${key}`,
-        model: props.example.model,
-      })
+      const realCurl = claudeCodeSetup(props.example.endpoint, `sk-${key}`)
       const copied = await copyToClipboard(realCurl)
       if (copied) {
         toast.success(t('Copied to clipboard'))
@@ -345,12 +329,12 @@ function RequestPreview(props: {
           </IconBadge>
           <div className='min-w-0'>
             <div className='truncate text-sm font-medium'>
-              {t('First API request')}
+              {t('Claude Code setup')}
             </div>
             <div className='text-muted-foreground truncate text-xs'>
               {props.example.ready
                 ? props.example.keyName
-                : t('Create an API key to unlock the real request')}
+                : t('Create an API key to fill in the real setup')}
             </div>
           </div>
         </div>
@@ -361,7 +345,7 @@ function RequestPreview(props: {
             className='h-7 gap-1.5 px-2 text-xs'
             disabled={isCopying}
             onClick={handleCopyRequest}
-            aria-label={t('Copy ready-to-run curl')}
+            aria-label={t('Copy Claude Code setup')}
           >
             <Copy data-icon='inline-start' />
             {isCopying ? t('Loading') : t('Copy')}
@@ -507,23 +491,23 @@ export function OverviewDashboard() {
   const startSteps = useMemo<StartStep[]>(
     () => [
       {
-        title: t('Create API Key'),
-        description: t('Create a key for your app or service'),
-        to: '/keys',
-        icon: KeyRound,
-        completed: Boolean(preferredKey),
-      },
-      {
         title: t('Add credits'),
-        description: t('Keep enough balance before production traffic'),
+        description: t('New accounts get trial credit; top up from ¥100'),
         to: '/wallet',
         icon: CreditCard,
         completed: remainQuota > 0 || usedQuota > 0,
       },
       {
-        title: t('Send a request'),
-        description: t('Verify routing with Playground or your client'),
-        to: '/playground',
+        title: t('Create API Key'),
+        description: t('One key per project keeps usage easy to read'),
+        to: '/keys',
+        icon: KeyRound,
+        completed: Boolean(preferredKey),
+      },
+      {
+        title: t('Set up Claude Code'),
+        description: t('Copy the Claude Code setup and run it in a terminal'),
+        to: '/keys',
         icon: TerminalSquare,
         completed: requestCount > 0,
       },
@@ -570,25 +554,25 @@ export function OverviewDashboard() {
   const heroSignals = useMemo<HeroSignal[]>(
     () => [
       {
-        label: t('Route active'),
-        value: apiInfoItems.length > 0 ? t('Online') : t('Current domain'),
+        label: t('API address'),
+        value: new URL(normalizeEndpoint(apiInfoItems[0]?.url)).host,
         icon: RadioTower,
         tone: 'info',
       },
       {
-        label: t('Auth configured'),
-        value: preferredKey ? t('Secured') : t('Needs API key'),
+        label: t('API key'),
+        value: preferredKey ? t('Created') : t('Not created yet'),
         icon: ShieldCheck,
         tone: 'success',
       },
       {
-        label: t('Model selected'),
+        label: t('Available model'),
         value: modelsQuery.data?.[0] ?? t('Loading'),
         icon: Timer,
         tone: 'chart-4',
       },
     ],
-    [apiInfoItems.length, modelsQuery.data, preferredKey, t]
+    [apiInfoItems, modelsQuery.data, preferredKey, t]
   )
 
   const requestExample = useMemo<RequestExample>(() => {
@@ -649,7 +633,12 @@ export function OverviewDashboard() {
         <div className='flex flex-col gap-4'>
           <div id={setupGuideId} hidden={!setupGuideExpanded}>
             {setupGuideExpanded && (
-              <CardStaggerContainer className='grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]'>
+              <CardStaggerContainer
+                className={cn(
+                  'grid items-stretch gap-4',
+                  !SIMPLE_CONSOLE && 'xl:grid-cols-[minmax(0,1fr)_22rem]'
+                )}
+              >
                 <CardStaggerItem className='bg-card h-full overflow-hidden rounded-2xl border shadow-xs'>
                   <div className='relative h-full overflow-hidden p-4 sm:p-5'>
                     <SetupGuideBackdrop />
@@ -665,11 +654,11 @@ export function OverviewDashboard() {
                               {t('Get started')}
                             </div>
                             <h3 className='text-xl font-semibold tracking-tight sm:text-2xl'>
-                              {t('Build on your API gateway in minutes')}
+                              {t('Use Claude in three steps')}
                             </h3>
                             <p className='text-muted-foreground max-w-xl text-sm leading-relaxed'>
                               {t(
-                                'A focused home for keys, balance, routing, and service health.'
+                                'Top up, create a key, then point Claude Code at it. Balance and usage live here.'
                               )}
                             </p>
                           </div>
@@ -711,23 +700,25 @@ export function OverviewDashboard() {
                   </div>
                 </CardStaggerItem>
 
-                <CardStaggerItem className='bg-card h-full rounded-2xl border p-4 shadow-xs sm:p-5'>
-                  <div className='flex h-full flex-col gap-4'>
-                    <div className='flex flex-col gap-1'>
-                      <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
-                        {t('Recommended actions')}
+                {!SIMPLE_CONSOLE && (
+                  <CardStaggerItem className='bg-card h-full rounded-2xl border p-4 shadow-xs sm:p-5'>
+                    <div className='flex h-full flex-col gap-4'>
+                      <div className='flex flex-col gap-1'>
+                        <div className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
+                          {t('Recommended actions')}
+                        </div>
+                        <h3 className='text-lg font-semibold tracking-tight'>
+                          {t('Shortcuts')}
+                        </h3>
                       </div>
-                      <h3 className='text-lg font-semibold tracking-tight'>
-                        {t('Keep the platform ready')}
-                      </h3>
+                      <div className='grid gap-2'>
+                        {visibleQuickActions.map((action) => (
+                          <QuickActionItem key={action.title} action={action} />
+                        ))}
+                      </div>
                     </div>
-                    <div className='grid gap-2'>
-                      {visibleQuickActions.map((action) => (
-                        <QuickActionItem key={action.title} action={action} />
-                      ))}
-                    </div>
-                  </div>
-                </CardStaggerItem>
+                  </CardStaggerItem>
+                )}
               </CardStaggerContainer>
             )}
           </div>

@@ -43,6 +43,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { SIMPLE_CONSOLE } from '@/lib/claude666'
 import { cn } from '@/lib/utils'
 
 import { getSortLabels, type SortOption, type ViewMode } from '../constants'
@@ -94,7 +95,7 @@ export function PricingToolbar(props: PricingToolbarProps) {
             variant='outline'
             size='sm'
             onClick={() => setMobileFiltersOpen(true)}
-            className='gap-1.5 xl:hidden'
+            className={cn('gap-1.5', !SIMPLE_CONSOLE && 'xl:hidden')}
           >
             <Filter className='size-4' />
             {t('Filter')}

@@ -16,10 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { Home } from '@/features/home'
-
+// claude666: the marketing site lives at claude666.top, so the console has no
+// landing page. `/dashboard` is guarded and sends signed-out visitors to sign-in.
 export const Route = createFileRoute('/')({
-  component: Home,
+  beforeLoad: () => {
+    throw redirect({ to: '/dashboard' })
+  },
 })

@@ -1,0 +1,72 @@
+/*
+Claude服务站 changes to new-api, distributed under the same
+GNU Affero General Public License v3.0 (see LICENSE and NOTICE).
+
+Brings the console in line with claude666.top (public/site.css there): panels
+are separated by background only, no outlines, no drop shadows, no gradient or
+glass decoration; one accent color for decorative icons; light, large numbers.
+Rules here are unlayered on purpose so they win over Tailwind's utility layer
+without !important. Status colors (success / warning / destructive) are kept.
+*/
+
+/* Panels: white on the page gray, no border, shadow or ring */
+.bg-card,
+[data-slot='card'] {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Sub-panels inside a panel sit on the sunk gray, also without outlines.
+   Form controls keep their borders so they still read as inputs. */
+:where(.bg-card, [data-slot='card'])
+  :where([class*='bg-background'], [class*='bg-muted']):not(
+    input,
+    textarea,
+    select,
+    button,
+    [role='combobox'],
+    [data-slot='input']
+  ) {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.shadow-xs,
+.shadow-sm {
+  box-shadow: none;
+}
+
+/* Decorative gradients and frosted glass */
+.backdrop-blur,
+.backdrop-blur-sm,
+.backdrop-blur-md {
+  backdrop-filter: none;
+}
+[class*='bg-linear-to'],
+[class*='bg-[radial-gradient'],
+[class*='bg-[linear-gradient'] {
+  background-image: none;
+}
+
+/* Decorative icon tiles use the accent only (site.css .tile) */
+[data-slot='icon-badge']:is(
+  [data-tone='info'],
+  [data-tone='primary'],
+  [data-tone^='chart-']
+) {
+  background-color: var(--accent);
+  color: var(--primary);
+}
+
+/* Big stat numbers: light proportional figures instead of bold monospace */
+.font-mono:is(.text-xl, .text-2xl, .sm\:text-2xl) {
+  font-family: 'Helvetica Neue', 'Segoe UI', var(--font-ui-sans);
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+/* Headings at medium weight, never the heaviest */
+:is(h1, h2, h3, h4).font-semibold,
+:is(h1, h2, h3, h4).font-bold {
+  font-weight: 500;
+}
