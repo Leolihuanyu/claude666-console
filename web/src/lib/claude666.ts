@@ -27,3 +27,22 @@ export function claudeCodeSetup(endpoint: string, apiKey: string): string {
     'claude',
   ].join('\n')
 }
+
+/**
+ * Base URL customers put into Claude Code or an SDK. The console is served at
+ * `console.<domain>` and the same backend at `api.<domain>`; customers should
+ * see the api host (the one on claude666.top), while password-reset and
+ * payment return links keep using `ServerAddress`, the console host. Any other
+ * host is returned unchanged, so local development is unaffected.
+ */
+export function apiBaseUrl(address: string): string {
+  try {
+    const url = new URL(address)
+    if (url.hostname.startsWith('console.')) {
+      url.hostname = `api.${url.hostname.slice('console.'.length)}`
+    }
+    return url.origin
+  } catch {
+    return address
+  }
+}

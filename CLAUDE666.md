@@ -24,4 +24,8 @@ Changes made in this fork (branch `claude666`):
   hero glow removed.
 - `web/src/components/ui/icon-badge.tsx`: exposes `data-slot` / `data-tone` for
   styling.
+- API base URL shown to customers (key connection info, CC Switch, chat
+  presets, model details, overview snippet) maps the `console.` host to the
+  `api.` host via `apiBaseUrl` in `web/src/lib/claude666.ts`; `ServerAddress`
+  stays the console host for password-reset and payment return links.
 - New translation keys for the texts above in `web/src/i18n/locales/*.json`.

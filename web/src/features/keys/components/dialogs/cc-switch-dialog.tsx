@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getUserModels } from '@/lib/api'
+import { apiBaseUrl } from '@/lib/claude666'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
 const APP_CONFIGS = {
@@ -60,12 +61,12 @@ function getServerAddress(): string {
     const raw = localStorage.getItem('status')
     if (raw) {
       const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address
+      if (status.server_address) return apiBaseUrl(status.server_address)
     }
   } catch {
     /* empty */
   }
-  return window.location.origin
+  return apiBaseUrl(window.location.origin)
 }
 
 function buildCCSwitchURL(

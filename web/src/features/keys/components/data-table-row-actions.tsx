@@ -51,6 +51,7 @@ import { useChatPresets } from '@/features/chat/hooks/use-chat-presets'
 import { resolveChatUrl, type ChatPreset } from '@/features/chat/lib/chat-links'
 import { sendToFluent } from '@/features/chat/lib/send-to-fluent'
 import { encodeChannelConnectionInfo } from '@/lib/channel-connection-info'
+import { apiBaseUrl } from '@/lib/claude666'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { handleServerError } from '@/lib/handle-server-error'
 
@@ -64,12 +65,14 @@ function getServerAddress(): string {
     const raw = localStorage.getItem('status')
     if (raw) {
       const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address as string
+      if (status.server_address) {
+        return apiBaseUrl(status.server_address as string)
+      }
     }
   } catch {
     /* empty */
   }
-  return window.location.origin
+  return apiBaseUrl(window.location.origin)
 }
 
 type DataTableRowActionsProps<TData> = {

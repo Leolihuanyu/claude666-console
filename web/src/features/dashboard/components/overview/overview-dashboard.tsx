@@ -52,7 +52,7 @@ import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
-import { SIMPLE_CONSOLE, claudeCodeSetup } from '@/lib/claude666'
+import { SIMPLE_CONSOLE, apiBaseUrl, claudeCodeSetup } from '@/lib/claude666'
 import { handleServerError } from '@/lib/handle-server-error'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
@@ -143,7 +143,7 @@ function saveSetupGuideExpanded(expanded: boolean): void {
 
 function getCurrentOrigin(): string {
   if (typeof window === 'undefined') return ''
-  return window.location.origin
+  return apiBaseUrl(window.location.origin)
 }
 
 function normalizeEndpoint(sourceUrl?: string): string {
