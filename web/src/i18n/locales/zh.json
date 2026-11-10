@@ -7415,6 +7415,20 @@
     "Available model": "可用模型",
     "Use Claude in three steps": "三步用上 Claude",
     "Top up, create a key, then point Claude Code at it. Balance and usage live here.": "充值、创建密钥、填进 Claude Code。余额和用量都在这里看。",
-    "Shortcuts": "常用入口"
+    "Shortcuts": "常用入口",
+    "Alipay Gateway": "支付宝网关",
+    "Alipay website payment (alipay.trade.page.pay). Customers choose Alipay in the wallet; the amount follows the top-up price and minimum top-up in General.": "支付宝电脑网站支付（alipay.trade.page.pay）。客户在钱包里选择支付宝付款，金额按「通用」里的充值价格和最低充值计算。",
+    "Notify URL:": "异步通知地址：",
+    "Return URL:": "同步返回地址：",
+    "Both are sent with each order, so nothing needs to be set in the Alipay console. Signing uses RSA2 keys (public key mode).": "这两个地址随每笔订单发送，不需要在支付宝后台填写。签名使用 RSA2 密钥（公钥模式）。",
+    "App ID": "应用 ID（APPID）",
+    "First top-up bonus (USD)": "首充赠送（美元）",
+    "Extra credit on a user's first successful online top-up. 0 turns it off.": "用户第一次在线充值成功时额外赠送的额度。填 0 表示不送。",
+    "App private key": "应用私钥",
+    "RSA2 private key, PKCS8 or PKCS1 (leave blank unless updating)": "RSA2 私钥，PKCS8 或 PKCS1 均可（不修改请留空）",
+    "Alipay public key": "支付宝公钥",
+    "Shown in the Alipay console after uploading the app public key (leave blank unless updating)": "上传应用公钥后，在支付宝开放平台显示（不修改请留空）",
+    "Use the Alipay sandbox gateway and sandbox keys for testing": "使用支付宝沙箱网关和沙箱密钥进行测试",
+    "{{provider}} top-up succeeded, amount added: {{quota}} including first top-up bonus {{bonus}}, payment amount: {{amount}}": "{{provider}} 充值成功，到账额度：{{quota}}（含首充赠送 {{bonus}}），支付金额：{{amount}}"
   }
 }

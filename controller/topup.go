@@ -32,6 +32,30 @@ func GetTopUpInfo(c *gin.Context) {
 		payMethods = []map[string]string{}
 	}
 
+	// Claude服务站: direct Alipay owns the "alipay" type. Without Epay the
+	// default list would still offer 微信 and other Epay types, so it is
+	// replaced instead of merged.
+	if isAlipayTopUpEnabled() {
+		alipayMethod := map[string]string{
+			"name":      "支付宝",
+			"icon":      "SiAlipay",
+			"type":      model.PaymentMethodAlipay,
+			"color":     "#1677FF",
+			"min_topup": strconv.Itoa(operation_setting.MinTopUp),
+		}
+		if isEpayTopUpEnabled() {
+			merged := []map[string]string{alipayMethod}
+			for _, method := range payMethods {
+				if method["type"] != model.PaymentMethodAlipay {
+					merged = append(merged, method)
+				}
+			}
+			payMethods = merged
+		} else {
+			payMethods = []map[string]string{alipayMethod}
+		}
+	}
+
 	// 如果启用了 Stripe 支付，添加到支付方法列表
 	if isStripeTopUpEnabled() {
 		// 检查是否已经包含 Stripe
@@ -98,7 +122,7 @@ func GetTopUpInfo(c *gin.Context) {
 	}
 
 	data := gin.H{
-		"enable_online_topup":              isEpayTopUpEnabled(),
+		"enable_online_topup":              isEpayTopUpEnabled() || isAlipayTopUpEnabled(),
 		"enable_stripe_topup":              isStripeTopUpEnabled(),
 		"enable_creem_topup":               isCreemTopUpEnabled(),
 		"enable_waffo_topup":               enableWaffo,
@@ -304,6 +328,11 @@ func RequestEpay(c *gin.Context) {
 	payMoney := getPayMoney(req.Amount, group)
 	if payMoney < 0.01 {
 		paymentError(c, common.NewMessage("Payment amount is too low"))
+		return
+	}
+
+	if req.PaymentMethod == model.PaymentMethodAlipay && isAlipayTopUpEnabled() {
+		requestAlipayPay(c, id, req.Amount, payMoney)
 		return
 	}
 

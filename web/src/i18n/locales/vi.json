@@ -7415,6 +7415,20 @@
     "Available model": "Available model",
     "Use Claude in three steps": "Use Claude in three steps",
     "Top up, create a key, then point Claude Code at it. Balance and usage live here.": "Top up, create a key, then point Claude Code at it. Balance and usage live here.",
-    "Shortcuts": "Shortcuts"
+    "Shortcuts": "Shortcuts",
+    "Alipay Gateway": "Alipay Gateway",
+    "Alipay website payment (alipay.trade.page.pay). Customers choose Alipay in the wallet; the amount follows the top-up price and minimum top-up in General.": "Alipay website payment (alipay.trade.page.pay). Customers choose Alipay in the wallet; the amount follows the top-up price and minimum top-up in General.",
+    "Notify URL:": "Notify URL:",
+    "Return URL:": "Return URL:",
+    "Both are sent with each order, so nothing needs to be set in the Alipay console. Signing uses RSA2 keys (public key mode).": "Both are sent with each order, so nothing needs to be set in the Alipay console. Signing uses RSA2 keys (public key mode).",
+    "App ID": "App ID",
+    "First top-up bonus (USD)": "First top-up bonus (USD)",
+    "Extra credit on a user's first successful online top-up. 0 turns it off.": "Extra credit on a user's first successful online top-up. 0 turns it off.",
+    "App private key": "App private key",
+    "RSA2 private key, PKCS8 or PKCS1 (leave blank unless updating)": "RSA2 private key, PKCS8 or PKCS1 (leave blank unless updating)",
+    "Alipay public key": "Alipay public key",
+    "Shown in the Alipay console after uploading the app public key (leave blank unless updating)": "Shown in the Alipay console after uploading the app public key (leave blank unless updating)",
+    "Use the Alipay sandbox gateway and sandbox keys for testing": "Use the Alipay sandbox gateway and sandbox keys for testing",
+    "{{provider}} top-up succeeded, amount added: {{quota}} including first top-up bonus {{bonus}}, payment amount: {{amount}}": "{{provider}} top-up succeeded, amount added: {{quota}} including first top-up bonus {{bonus}}, payment amount: {{amount}}"
   }
 }

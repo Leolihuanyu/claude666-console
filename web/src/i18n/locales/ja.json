@@ -7415,6 +7415,20 @@
     "Available model": "Available model",
     "Use Claude in three steps": "Use Claude in three steps",
     "Top up, create a key, then point Claude Code at it. Balance and usage live here.": "Top up, create a key, then point Claude Code at it. Balance and usage live here.",
-    "Shortcuts": "Shortcuts"
+    "Shortcuts": "Shortcuts",
+    "Alipay Gateway": "Alipay ゲートウェイ",
+    "Alipay website payment (alipay.trade.page.pay). Customers choose Alipay in the wallet; the amount follows the top-up price and minimum top-up in General.": "Alipay の PC サイト決済（alipay.trade.page.pay）です。お客様はウォレットで Alipay を選んで支払います。金額は「一般」のチャージ単価と最低チャージ額に従います。",
+    "Notify URL:": "通知 URL：",
+    "Return URL:": "戻り URL：",
+    "Both are sent with each order, so nothing needs to be set in the Alipay console. Signing uses RSA2 keys (public key mode).": "どちらも注文ごとに送信されるため、Alipay 側での設定は不要です。署名は RSA2 鍵（公開鍵方式）を使います。",
+    "App ID": "アプリ ID（APPID）",
+    "First top-up bonus (USD)": "初回チャージ特典（USD）",
+    "Extra credit on a user's first successful online top-up. 0 turns it off.": "ユーザーの初回オンラインチャージ成功時に追加する額度です。0 で無効になります。",
+    "App private key": "アプリ秘密鍵",
+    "RSA2 private key, PKCS8 or PKCS1 (leave blank unless updating)": "RSA2 秘密鍵。PKCS8・PKCS1 どちらも可（変更しない場合は空欄）",
+    "Alipay public key": "Alipay 公開鍵",
+    "Shown in the Alipay console after uploading the app public key (leave blank unless updating)": "アプリ公開鍵をアップロードすると Alipay 開放平台に表示されます（変更しない場合は空欄）",
+    "Use the Alipay sandbox gateway and sandbox keys for testing": "テスト用に Alipay サンドボックスのゲートウェイと鍵を使います",
+    "{{provider}} top-up succeeded, amount added: {{quota}} including first top-up bonus {{bonus}}, payment amount: {{amount}}": "{{provider}} でのチャージに成功しました。追加額度：{{quota}}（初回特典 {{bonus}} を含む）、支払額：{{amount}}"
   }
 }

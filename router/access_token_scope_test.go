@@ -57,6 +57,8 @@ var accessTokenExemptRoutes = []string{
 
 	// Payment callbacks.
 	"POST /api/stripe/webhook",
+	"POST /api/alipay/notify",
+	"GET /api/alipay/return",
 	"POST /api/creem/webhook",
 	"POST /api/waffo/webhook",
 	"POST /api/waffo-pancake/webhook/:env",
