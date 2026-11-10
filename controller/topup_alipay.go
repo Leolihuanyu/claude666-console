@@ -106,16 +106,18 @@ func requestAlipayPay(c *gin.Context, userId int, amount int64, payMoney float64
 	}
 	logger.LogInfo(c.Request.Context(), common.LogText("Alipay top-up order created user_id=%d trade_no=%s amount=%d money=%s", userId, tradeNo, amount, totalAmount))
 
-	// The console posts data as form fields to url, which the gateway accepts
-	// exactly like the signed GET query.
-	params := make(map[string]string, len(payURL.Query()))
-	for key, values := range payURL.Query() {
+	// The console posts data as form fields to url. The gateway decodes a POST
+	// body with the charset named in the URL query (GBK when absent), so it
+	// must stay there or Chinese subjects fail with invalid-signature.
+	query := payURL.Query()
+	params := make(map[string]string, len(query))
+	for key, values := range query {
 		if len(values) > 0 {
 			params[key] = values[0]
 		}
 	}
 	gateway := *payURL
-	gateway.RawQuery = ""
+	gateway.RawQuery = url.Values{"charset": {query.Get("charset")}}.Encode()
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": params, "url": gateway.String()})
 }
 

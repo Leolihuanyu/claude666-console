@@ -165,3 +165,28 @@ func TestAlipayNotifyIgnoresUnpaidStatus(t *testing.T) {
 	assert.Equal(t, "success", postAlipayNotify(values))
 	assert.Equal(t, 0, userQuotaForAlipayTest(t, user.Id))
 }
+
+func TestRequestAlipayPayKeepsCharsetInGatewayURL(t *testing.T) {
+	setupAlipayNotifyTest(t)
+	user := &model.User{Username: "alipay-pay-user", Password: "unused", Status: common.UserStatusEnabled, Group: "default"}
+	require.NoError(t, model.DB.Create(user).Error)
+
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/api/user/pay", nil)
+	requestAlipayPay(ctx, user.Id, 1, 2.3)
+
+	var body struct {
+		Message string            `json:"message"`
+		URL     string            `json:"url"`
+		Data    map[string]string `json:"data"`
+	}
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &body))
+	require.Equal(t, "success", body.Message)
+	gateway, err := url.Parse(body.URL)
+	require.NoError(t, err)
+	assert.Equal(t, "utf-8", gateway.Query().Get("charset"))
+	assert.Equal(t, "utf-8", body.Data["charset"])
+	assert.Contains(t, body.Data["biz_content"], "Claude服务站余额充值")
+}
