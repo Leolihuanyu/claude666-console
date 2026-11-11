@@ -3,8 +3,11 @@ Claude服务站 changes to new-api, distributed under the same
 GNU Affero General Public License v3.0 (see LICENSE and NOTICE).
 */
 
-/** Invite rewards are not offered yet; hide the wallet referral card. */
-export const SHOW_AFFILIATE = false
+/**
+ * Wallet referral card. It still stays hidden while ReferralInviterBonus is 0,
+ * since referrals are rewarded on the invitee's first top-up only.
+ */
+export const SHOW_AFFILIATE = true
 
 /**
  * Keep the console as plain as the marketing site: the sidebar toggles in the

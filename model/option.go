@@ -106,6 +106,10 @@ func InitOptionMap() {
 	common.OptionMap["AlipayPublicKey"] = setting.AlipayPublicKey
 	common.OptionMap["AlipaySandboxEnabled"] = strconv.FormatBool(setting.AlipaySandboxEnabled)
 	common.OptionMap["AlipayFirstTopUpBonus"] = strconv.FormatFloat(setting.AlipayFirstTopUpBonus, 'f', -1, 64)
+	common.OptionMap["ReferralInviterBonus"] = strconv.FormatFloat(setting.ReferralInviterBonus, 'f', -1, 64)
+	common.OptionMap["ReferralInviteeBonus"] = strconv.FormatFloat(setting.ReferralInviteeBonus, 'f', -1, 64)
+	common.OptionMap["ReferralMinTopUp"] = strconv.Itoa(setting.ReferralMinTopUp)
+	common.OptionMap["TopUpPriceTiers"] = setting.TopUpPriceTiers
 	common.OptionMap["CreemApiKey"] = setting.CreemApiKey
 	common.OptionMap["CreemProducts"] = setting.CreemProducts
 	common.OptionMap["CreemTestMode"] = strconv.FormatBool(setting.CreemTestMode)
@@ -275,6 +279,9 @@ func validateOptionValue(key string, value string) error {
 	}
 	if key == "MaxTokenAutoGroups" {
 		return setting.ValidateMaxTokenAutoGroups(value)
+	}
+	if key == "TopUpPriceTiers" {
+		return setting.ValidateTopUpPriceTiers(value)
 	}
 	return nil
 }
@@ -566,6 +573,14 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.AlipaySandboxEnabled = value == "true"
 	case "AlipayFirstTopUpBonus":
 		setting.AlipayFirstTopUpBonus, _ = strconv.ParseFloat(value, 64)
+	case "ReferralInviterBonus":
+		setting.ReferralInviterBonus, _ = strconv.ParseFloat(value, 64)
+	case "ReferralInviteeBonus":
+		setting.ReferralInviteeBonus, _ = strconv.ParseFloat(value, 64)
+	case "ReferralMinTopUp":
+		setting.ReferralMinTopUp, _ = strconv.Atoi(value)
+	case "TopUpPriceTiers":
+		err = setting.UpdateTopUpPriceTiersByJsonString(value)
 	case "CreemApiKey":
 		setting.CreemApiKey = value
 	case "CreemProducts":

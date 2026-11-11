@@ -121,6 +121,13 @@ func GetTopUpInfo(c *gin.Context) {
 		}
 	}
 
+	group, err := model.GetUserGroup(c.GetInt("id"), false)
+	if err != nil {
+		common.ApiErrorT(c, "Failed to get the user group")
+		return
+	}
+	priceTiers := topUpPriceTiersForGroup(group)
+
 	data := gin.H{
 		"enable_online_topup":              isEpayTopUpEnabled() || isAlipayTopUpEnabled(),
 		"enable_stripe_topup":              isStripeTopUpEnabled(),
@@ -143,7 +150,11 @@ func GetTopUpInfo(c *gin.Context) {
 		"waffo_min_topup":         setting.WaffoMinTopUp,
 		"waffo_pancake_min_topup": setting.WaffoPancakeMinTopUp,
 		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
-		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
+		"discount":                topUpDiscountsWithTiers(priceTiers),
+		"price_tiers":             priceTiers,
+		"referral_inviter_bonus":  setting.ReferralInviterBonus,
+		"referral_invitee_bonus":  setting.ReferralInviteeBonus,
+		"referral_min_topup":      setting.ReferralMinTopUp,
 		"topup_link":              common.TopUpLink,
 	}
 	common.ApiSuccess(c, data)
@@ -199,7 +210,69 @@ func getPayMoney(amount int64, group string) float64 {
 
 	payMoney := dAmount.Mul(dPrice).Mul(dTopupGroupRatio).Mul(dDiscount)
 
+	// Claude服务站: a volume tier is a price of its own, not a further
+	// discount, so the cheaper of the two wins. A group whose top-up ratio
+	// already undercuts the tier keeps its price.
+	if tier, ok := setting.FindTopUpPriceTier(dAmount); ok {
+		tierMoney := dAmount.Mul(decimal.NewFromFloat(tier.Price))
+		if tierMoney.LessThan(payMoney) {
+			payMoney = tierMoney
+		}
+	}
+
 	return payMoney.InexactFloat64()
+}
+
+// topUpPriceTierInfo is a tier as shown to one user. Discount is the tier
+// price against that user's regular price per USD.
+type topUpPriceTierInfo struct {
+	MinAmount int64   `json:"min_amount"`
+	Price     float64 `json:"price"`
+	Discount  float64 `json:"discount"`
+}
+
+// topUpPriceTiersForGroup lists the tiers that lower the price for a user of
+// group, in ascending MinAmount.
+func topUpPriceTiersForGroup(group string) []topUpPriceTierInfo {
+	regular := decimal.NewFromFloat(operation_setting.Price)
+	if ratio := common.GetTopupGroupRatio(group); ratio != 0 {
+		regular = regular.Mul(decimal.NewFromFloat(ratio))
+	}
+	tiers := make([]topUpPriceTierInfo, 0)
+	if !regular.IsPositive() {
+		return tiers
+	}
+	for _, tier := range setting.GetTopUpPriceTiers() {
+		discount := decimal.NewFromFloat(tier.Price).Div(regular)
+		if discount.LessThan(decimal.NewFromInt(1)) {
+			tiers = append(tiers, topUpPriceTierInfo{
+				MinAmount: tier.MinAmount,
+				Price:     tier.Price,
+				Discount:  discount.InexactFloat64(),
+			})
+		}
+	}
+	return tiers
+}
+
+// topUpDiscountsWithTiers adds each preset's tier rate to the configured
+// amount discounts, so the preset buttons show the tier price. Presets with
+// an explicit discount keep it.
+func topUpDiscountsWithTiers(priceTiers []topUpPriceTierInfo) map[int]float64 {
+	configured := operation_setting.GetPaymentSetting().AmountDiscount
+	discounts := make(map[int]float64, len(configured))
+	maps.Copy(discounts, configured)
+	for _, amount := range operation_setting.GetPaymentSetting().AmountOptions {
+		if _, ok := discounts[amount]; ok {
+			continue
+		}
+		for _, tier := range priceTiers {
+			if tier.MinAmount <= int64(amount) {
+				discounts[amount] = tier.Discount
+			}
+		}
+	}
+	return discounts
 }
 
 func getMinTopup() int64 {

@@ -331,6 +331,10 @@ export type BillingSettings = {
   AlipayPublicKey: string
   AlipaySandboxEnabled: boolean
   AlipayFirstTopUpBonus: number
+  ReferralInviterBonus: number
+  ReferralInviteeBonus: number
+  ReferralMinTopUp: number
+  TopUpPriceTiers: string
   CreemApiKey: string
   CreemWebhookSecret: string
   CreemTestMode: boolean

@@ -21,6 +21,7 @@ import { describe, expect, test } from 'vitest'
 import { PAYMENT_TYPES } from '../constants'
 import {
   dispatchSelectedPayment,
+  getPriceTierDiscount,
   isStripePayment,
   isWaffoPayment,
   isWaffoPancakePayment,
@@ -81,5 +82,20 @@ describe('payment dispatch', () => {
 
     expect(success).toBe(false)
     expect(called).toBe(false)
+  })
+})
+
+describe('price tier discount', () => {
+  const tiers = [
+    { min_amount: 250, price: 2, discount: 0.87 },
+    { min_amount: 1000, price: 1.9, discount: 0.83 },
+  ]
+
+  test('uses the reached tier with the largest min_amount', () => {
+    expect(getPriceTierDiscount(tiers, 249)).toBeUndefined()
+    expect(getPriceTierDiscount(tiers, 250)).toBe(0.87)
+    expect(getPriceTierDiscount(tiers, 999)).toBe(0.87)
+    expect(getPriceTierDiscount(tiers, 5000)).toBe(0.83)
+    expect(getPriceTierDiscount(undefined, 5000)).toBeUndefined()
   })
 })

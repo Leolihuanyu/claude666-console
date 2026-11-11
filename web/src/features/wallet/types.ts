@@ -117,6 +117,18 @@ export interface WaffoPayMethod {
 }
 
 /**
+ * Volume price for a single top-up of at least min_amount USD (Claude服务站)
+ */
+export interface TopupPriceTier {
+  /** Smallest top-up amount (USD) the tier applies to */
+  min_amount: number
+  /** Price per USD in the payment currency */
+  price: number
+  /** Tier price relative to this user's regular price (always below 1) */
+  discount: number
+}
+
+/**
  * Topup configuration information
  */
 export interface TopupInfo {
@@ -156,6 +168,14 @@ export interface TopupInfo {
   payment_compliance_confirmed?: boolean
   /** Current compliance terms version */
   payment_compliance_terms_version?: string
+  /** Price tiers that are cheaper for this user, ascending by min_amount */
+  price_tiers?: TopupPriceTier[]
+  /** Referral reward (USD) for the inviter on a referred user's first top-up */
+  referral_inviter_bonus?: number
+  /** Referral reward (USD) for the referred user on their first top-up */
+  referral_invitee_bonus?: number
+  /** Smallest first top-up (USD) that earns referral rewards; 0 means any */
+  referral_min_topup?: number
 }
 
 /**

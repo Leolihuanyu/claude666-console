@@ -114,6 +114,7 @@ export function RechargeFormCard({
 }: RechargeFormCardProps) {
   const { t } = useTranslation()
   const [localAmount, setLocalAmount] = useState(topupAmount.toString())
+  const priceTiers = topupInfo?.price_tiers ?? []
 
   useEffect(() => {
     // Empty string must survive, otherwise the field can never be cleared
@@ -321,6 +322,18 @@ export function RechargeFormCard({
                     )}
                   </div>
                 </div>
+                {priceTiers.length > 0 && (
+                  <ul className='text-muted-foreground space-y-0.5 text-xs'>
+                    {priceTiers.map((tier) => (
+                      <li key={tier.min_amount}>
+                        {t(
+                          'Top up ${{amount}} or more at once and pay ¥{{price}} per $1',
+                          { amount: tier.min_amount, price: tier.price }
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div className='space-y-2.5 sm:space-y-3'>

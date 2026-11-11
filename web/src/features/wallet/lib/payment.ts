@@ -24,7 +24,12 @@ import {
   DEFAULT_PAYMENT_TYPE,
   DEFAULT_MIN_TOPUP,
 } from '../constants'
-import type { PaymentMethod, PresetAmount, TopupInfo } from '../types'
+import type {
+  PaymentMethod,
+  PresetAmount,
+  TopupInfo,
+  TopupPriceTier,
+} from '../types'
 
 // ============================================================================
 // Payment Processing Functions
@@ -216,4 +221,21 @@ export function mergePresetAmounts(
     value: amount,
     discount: discounts[amount] || 1.0,
   }))
+}
+
+/**
+ * Discount of the price tier the server applies to a top-up of amount: the
+ * reached tier with the largest min_amount. Returns undefined below every tier.
+ */
+export function getPriceTierDiscount(
+  tiers: TopupPriceTier[] | undefined,
+  amount: number
+): number | undefined {
+  let discount: number | undefined
+  for (const tier of tiers ?? []) {
+    if (tier.min_amount <= amount) {
+      discount = tier.discount
+    }
+  }
+  return discount
 }

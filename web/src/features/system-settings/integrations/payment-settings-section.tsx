@@ -97,6 +97,22 @@ function isHttpOriginUrl(value: string) {
   }
 }
 
+// Same rules the server checks before saving TopUpPriceTiers
+function isPriceTierList(parsed: unknown) {
+  return (
+    Array.isArray(parsed) &&
+    parsed.every(
+      (tier) =>
+        !!tier &&
+        typeof tier === 'object' &&
+        Number.isInteger(tier.min_amount) &&
+        tier.min_amount > 0 &&
+        typeof tier.price === 'number' &&
+        tier.price > 0
+    )
+  )
+}
+
 const paymentSchema = z.object({
   PayAddress: z.string().refine((value) => {
     const trimmed = value.trim()
@@ -155,6 +171,18 @@ const paymentSchema = z.object({
   AlipayPublicKey: z.string(),
   AlipaySandboxEnabled: z.boolean(),
   AlipayFirstTopUpBonus: z.coerce.number().min(0),
+  ReferralInviterBonus: z.coerce.number().min(0),
+  ReferralInviteeBonus: z.coerce.number().min(0),
+  ReferralMinTopUp: z.coerce.number().int().min(0),
+  TopUpPriceTiers: z.string().superRefine((value, ctx) => {
+    const error = getJsonError(value, isPriceTierList)
+    if (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error,
+      })
+    }
+  }),
   CreemApiKey: z.string(),
   CreemWebhookSecret: z.string(),
   CreemTestMode: z.boolean(),
@@ -363,6 +391,7 @@ export function PaymentSettingsSection({
       PayMethods: formatJsonForEditor(initialFormValues.PayMethods),
       AmountOptions: formatJsonForEditor(initialFormValues.AmountOptions),
       AmountDiscount: formatJsonForEditor(initialFormValues.AmountDiscount),
+      TopUpPriceTiers: formatJsonForEditor(initialFormValues.TopUpPriceTiers),
       CreemProducts: formatJsonForEditor(initialFormValues.CreemProducts),
     },
   })
@@ -420,6 +449,7 @@ export function PaymentSettingsSection({
       PayMethods: formatJsonForEditor(parsedDefaults.PayMethods),
       AmountOptions: formatJsonForEditor(parsedDefaults.AmountOptions),
       AmountDiscount: formatJsonForEditor(parsedDefaults.AmountDiscount),
+      TopUpPriceTiers: formatJsonForEditor(parsedDefaults.TopUpPriceTiers),
       CreemProducts: formatJsonForEditor(parsedDefaults.CreemProducts),
     })
   }, [defaultsSignature, form])
@@ -435,6 +465,7 @@ export function PaymentSettingsSection({
       PayMethods: values.PayMethods.trim(),
       AmountOptions: values.AmountOptions.trim(),
       AmountDiscount: values.AmountDiscount.trim(),
+      TopUpPriceTiers: values.TopUpPriceTiers.trim() || '[]',
       StripeApiSecret: values.StripeApiSecret.trim(),
       StripeWebhookSecret: values.StripeWebhookSecret.trim(),
       StripePriceId: values.StripePriceId.trim(),
@@ -446,6 +477,9 @@ export function PaymentSettingsSection({
       AlipayPublicKey: values.AlipayPublicKey.trim(),
       AlipaySandboxEnabled: values.AlipaySandboxEnabled,
       AlipayFirstTopUpBonus: values.AlipayFirstTopUpBonus,
+      ReferralInviterBonus: values.ReferralInviterBonus,
+      ReferralInviteeBonus: values.ReferralInviteeBonus,
+      ReferralMinTopUp: values.ReferralMinTopUp,
       CreemApiKey: values.CreemApiKey.trim(),
       CreemWebhookSecret: values.CreemWebhookSecret.trim(),
       CreemTestMode: values.CreemTestMode,
@@ -484,6 +518,7 @@ export function PaymentSettingsSection({
       PayMethods: initialRef.current.PayMethods.trim(),
       AmountOptions: initialRef.current.AmountOptions.trim(),
       AmountDiscount: initialRef.current.AmountDiscount.trim(),
+      TopUpPriceTiers: initialRef.current.TopUpPriceTiers.trim() || '[]',
       StripeApiSecret: initialRef.current.StripeApiSecret.trim(),
       StripeWebhookSecret: initialRef.current.StripeWebhookSecret.trim(),
       StripePriceId: initialRef.current.StripePriceId.trim(),
@@ -496,6 +531,9 @@ export function PaymentSettingsSection({
       AlipayPublicKey: initialRef.current.AlipayPublicKey.trim(),
       AlipaySandboxEnabled: initialRef.current.AlipaySandboxEnabled,
       AlipayFirstTopUpBonus: initialRef.current.AlipayFirstTopUpBonus,
+      ReferralInviterBonus: initialRef.current.ReferralInviterBonus,
+      ReferralInviteeBonus: initialRef.current.ReferralInviteeBonus,
+      ReferralMinTopUp: initialRef.current.ReferralMinTopUp,
       CreemApiKey: initialRef.current.CreemApiKey.trim(),
       CreemWebhookSecret: initialRef.current.CreemWebhookSecret.trim(),
       CreemTestMode: initialRef.current.CreemTestMode,
@@ -581,6 +619,13 @@ export function PaymentSettingsSection({
     }
 
     if (
+      normalizeJsonForComparison(sanitized.TopUpPriceTiers) !==
+      normalizeJsonForComparison(initial.TopUpPriceTiers)
+    ) {
+      updates.push({ key: 'TopUpPriceTiers', value: sanitized.TopUpPriceTiers })
+    }
+
+    if (
       sanitized.StripeApiSecret &&
       sanitized.StripeApiSecret !== initial.StripeApiSecret
     ) {
@@ -652,6 +697,27 @@ export function PaymentSettingsSection({
       updates.push({
         key: 'AlipayFirstTopUpBonus',
         value: sanitized.AlipayFirstTopUpBonus,
+      })
+    }
+
+    if (sanitized.ReferralInviterBonus !== initial.ReferralInviterBonus) {
+      updates.push({
+        key: 'ReferralInviterBonus',
+        value: sanitized.ReferralInviterBonus,
+      })
+    }
+
+    if (sanitized.ReferralInviteeBonus !== initial.ReferralInviteeBonus) {
+      updates.push({
+        key: 'ReferralInviteeBonus',
+        value: sanitized.ReferralInviteeBonus,
+      })
+    }
+
+    if (sanitized.ReferralMinTopUp !== initial.ReferralMinTopUp) {
+      updates.push({
+        key: 'ReferralMinTopUp',
+        value: sanitized.ReferralMinTopUp,
       })
     }
 
@@ -1188,6 +1254,34 @@ export function PaymentSettingsSection({
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name='TopUpPriceTiers'
+                    render={({ field }) => (
+                      <FormItem className='md:col-span-2'>
+                        <FormLabel>{t('Top-up price tiers')}</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            rows={4}
+                            className='font-mono text-xs'
+                            spellCheck={false}
+                            placeholder='[{"min_amount":250,"price":2}]'
+                            {...field}
+                            onChange={(event) =>
+                              field.onChange(event.target.value)
+                            }
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {t(
+                            'JSON array of {"min_amount": USD, "price": price per USD}. A single top-up of min_amount or more is charged price per USD; the tier with the largest min_amount reached applies. It does not stack with group top-up ratios or amount discounts: the user pays whichever is cheaper.'
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -1440,6 +1534,91 @@ export function PaymentSettingsSection({
                         <FormDescription>
                           {t(
                             'Shown in the Alipay console after uploading the app public key (leave blank unless updating)'
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <h4 className='text-base font-medium'>
+                    {t('Referral rewards')}
+                  </h4>
+                  <p className='text-muted-foreground text-sm'>
+                    {t(
+                      "Paid once, when an invited user's first successful online top-up completes. Keep the sign-up rewards for inviter and invitee at 0. The wallet shows the referral card only while the inviter reward is above 0."
+                    )}
+                  </p>
+                </div>
+
+                <div className='grid gap-6 md:grid-cols-3'>
+                  <FormField
+                    control={form.control}
+                    name='ReferralInviterBonus'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Inviter reward (USD)')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type='number'
+                            step='0.01'
+                            min={0}
+                            {...safeNumberFieldProps(field)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {t(
+                            "Added to the inviter's referral rewards, which they transfer to their balance. 0 turns referral rewards off."
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='ReferralInviteeBonus'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Invitee reward (USD)')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type='number'
+                            step='0.01'
+                            min={0}
+                            {...safeNumberFieldProps(field)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {t(
+                            "Added to the invited user's balance together with the top-up, on top of any first top-up bonus."
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='ReferralMinTopUp'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('Minimum first top-up (USD)')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type='number'
+                            step='1'
+                            min={0}
+                            {...safeNumberFieldProps(field)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {t(
+                            'The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.'
                           )}
                         </FormDescription>
                         <FormMessage />

@@ -46,6 +46,7 @@ import {
 import {
   getDefaultPaymentType,
   getMinTopupAmount,
+  getPriceTierDiscount,
   dispatchSelectedPayment,
 } from './lib'
 import type {
@@ -271,9 +272,14 @@ export function Wallet(props: WalletProps) {
     }
   }
 
-  // Get discount rate for current topup amount
+  // Get discount rate for current topup amount; custom amounts fall back to
+  // the price tier the server will apply
   const getDiscountRate = useCallback(() => {
-    return topupInfo?.discount?.[topupAmount] || DEFAULT_DISCOUNT_RATE
+    return (
+      topupInfo?.discount?.[topupAmount] ||
+      getPriceTierDiscount(topupInfo?.price_tiers, topupAmount) ||
+      DEFAULT_DISCOUNT_RATE
+    )
   }, [topupInfo, topupAmount])
 
   const handleSubscriptionAvailabilityChange = useCallback(
@@ -340,10 +346,13 @@ export function Wallet(props: WalletProps) {
               />
             </div>
 
-            {SHOW_AFFILIATE && (
+            {SHOW_AFFILIATE && (topupInfo?.referral_inviter_bonus ?? 0) > 0 && (
               <AffiliateRewardsCard
                 user={user}
                 affiliateLink={affiliateLink}
+                inviterBonus={topupInfo?.referral_inviter_bonus ?? 0}
+                inviteeBonus={topupInfo?.referral_invitee_bonus ?? 0}
+                minTopup={topupInfo?.referral_min_topup ?? 0}
                 onTransfer={() => setTransferDialogOpen(true)}
                 complianceConfirmed={
                   topupInfo?.payment_compliance_confirmed !== false

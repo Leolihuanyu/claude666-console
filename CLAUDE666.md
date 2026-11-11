@@ -19,7 +19,9 @@ Changes made in this fork (branch `claude666`):
 - Overview dashboard: customer-oriented setup guide (top up, create a key,
   set up Claude Code) with a Claude Code snippet in place of the curl example;
   shortcuts card hidden.
-- Wallet: referral card hidden. Profile: sidebar toggles hidden. Header: theme
+- Wallet: the referral card states the first top-up referral rule below and
+  is shown only while `ReferralInviterBonus` is above 0 (`SHOW_AFFILIATE` is
+  now on). Profile: sidebar toggles hidden. Header: theme
   drawer hidden. Pricing: filter column moved into the toolbar's filter sheet,
   hero glow removed.
 - `web/src/components/ui/icon-badge.tsx`: exposes `data-slot` / `data-tone` for
@@ -35,4 +37,22 @@ Changes made in this fork (branch `claude666`):
   `/api/alipay/return` confirms the order with `alipay.trade.query`. An
   optional bonus is credited on a user's first successful money top-up.
   Uses `github.com/smartwalle/alipay/v3`.
+- Top-up price tiers: option `TopUpPriceTiers` (JSON such as
+  `[{"min_amount":250,"price":2}]`, `setting/topup_price_tiers.go`). A single
+  top-up of `min_amount` USD or more is charged `price` CNY per USD; the
+  reached tier with the largest `min_amount` applies. `getPayMoney` takes the
+  cheaper of that and the regular price (group top-up ratio and amount
+  discount), so tiers never stack with an enterprise ratio. `/api/user/topup/info`
+  returns `price_tiers` that are cheaper for the user and adds the tier rate
+  to `discount` for presets without their own discount; the wallet lists the
+  tiers under the custom amount. Edited in the payment settings' General tab.
+- Referral rewards on the invitee's first paid top-up instead of at sign-up:
+  options `ReferralInviterBonus` (USD, to the inviter's referral rewards
+  `aff_quota` / `aff_history`), `ReferralInviteeBonus` (USD, to the invitee's
+  balance with the top-up) and `ReferralMinTopUp` (USD, smallest qualifying
+  first top-up, 0 = any), all 0 by default. Paid in `RechargeAlipay`'s
+  transaction (bonuses now passed as `model.AlipayBonus`); edited in the
+  Alipay tab. Sign-up rewards `QuotaForInviter` / `QuotaForInvitee` are meant
+  to stay 0, and the inviter's invite count now grows on every invited
+  registration even when `QuotaForInviter` is 0.
 - New translation keys for the texts above in `web/src/i18n/locales/*.json`.

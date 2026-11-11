@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import type { TFunction } from 'i18next'
 import { Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -32,19 +33,59 @@ import type { UserWalletData } from '../types'
 interface AffiliateRewardsCardProps {
   user: UserWalletData | null
   affiliateLink: string
+  /** Referral rewards in USD, paid on the referred user's first top-up */
+  inviterBonus: number
+  inviteeBonus: number
+  /** Smallest qualifying first top-up in USD; 0 means any */
+  minTopup: number
   onTransfer: () => void
   complianceConfirmed?: boolean
   loading?: boolean
 }
 
+// Claude服务站: rewards are paid on the referred user's first top-up, so the
+// card states the configured rule instead of upstream's generic sign-up text.
+function getReferralRule(
+  t: TFunction,
+  inviter: number,
+  invitee: number,
+  min: number
+): string {
+  const values = { inviter, invitee, min }
+  if (min > 0) {
+    return invitee > 0
+      ? t(
+          'When a friend signs up with your link and first tops up ${{min}} or more, you get ${{inviter}} (transferable to your balance) and your friend gets ${{invitee}} extra.',
+          values
+        )
+      : t(
+          'When a friend signs up with your link and first tops up ${{min}} or more, you get ${{inviter}} (transferable to your balance).',
+          values
+        )
+  }
+  return invitee > 0
+    ? t(
+        'When a friend signs up with your link and makes their first top-up, you get ${{inviter}} (transferable to your balance) and your friend gets ${{invitee}} extra.',
+        values
+      )
+    : t(
+        'When a friend signs up with your link and makes their first top-up, you get ${{inviter}} (transferable to your balance).',
+        values
+      )
+}
+
 export function AffiliateRewardsCard({
   user,
   affiliateLink,
+  inviterBonus,
+  inviteeBonus,
+  minTopup,
   onTransfer,
   complianceConfirmed = true,
   loading,
 }: AffiliateRewardsCardProps) {
   const { t } = useTranslation()
+  const rule = getReferralRule(t, inviterBonus, inviteeBonus, minTopup)
   if (loading) {
     return (
       <Card data-card-hover='false' className='bg-muted/20 py-0'>
@@ -73,10 +114,8 @@ export function AffiliateRewardsCard({
             <h3 className='truncate text-sm font-semibold'>
               {t('Referral Program')}
             </h3>
-            <p className='text-muted-foreground line-clamp-1 text-xs'>
-              {t(
-                'Earn rewards when users join through your referral link. Transfer accumulated rewards to your balance anytime.'
-              )}
+            <p className='text-muted-foreground text-xs leading-relaxed'>
+              {rule}
             </p>
           </div>
         </div>

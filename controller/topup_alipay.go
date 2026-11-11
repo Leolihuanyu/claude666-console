@@ -134,6 +134,15 @@ func withoutAlipayCertSN(values url.Values) url.Values {
 	return cleaned
 }
 
+func alipayBonusFromSettings() model.AlipayBonus {
+	return model.AlipayBonus{
+		FirstTopUp:       setting.AlipayFirstTopUpBonus,
+		ReferralInviter:  setting.ReferralInviterBonus,
+		ReferralInvitee:  setting.ReferralInviteeBonus,
+		ReferralMinTopUp: int64(setting.ReferralMinTopUp),
+	}
+}
+
 // settleAlipayTrade credits a paid order. ok=false means Alipay should retry.
 func settleAlipayTrade(ctx context.Context, tradeNo string, status alipay.TradeStatus, totalAmount string, callerIp string) (ok bool) {
 	if status != alipay.TradeStatusSuccess && status != alipay.TradeStatusFinished {
@@ -141,7 +150,7 @@ func settleAlipayTrade(ctx context.Context, tradeNo string, status alipay.TradeS
 	}
 	LockOrder(tradeNo)
 	defer UnlockOrder(tradeNo)
-	alreadyDone, err := model.RechargeAlipay(tradeNo, totalAmount, setting.AlipayFirstTopUpBonus, callerIp)
+	alreadyDone, err := model.RechargeAlipay(tradeNo, totalAmount, alipayBonusFromSettings(), callerIp)
 	switch {
 	case err == nil && alreadyDone:
 		logger.LogInfo(ctx, common.LogText("Alipay duplicate settlement ignored trade_no=%s", tradeNo))
