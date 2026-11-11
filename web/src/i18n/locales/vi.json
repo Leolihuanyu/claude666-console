@@ -7456,6 +7456,7 @@
     "Using another tool? Open its setup guide:": "Using another tool? Open its setup guide:",
     "Code (SDK)": "Code (SDK)",
     "Other tools": "Other tools",
-    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Copy the Claude Code setup to a terminal, or open the guide for your tool"
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Copy the Claude Code setup to a terminal, or open the guide for your tool",
+    "Key ready": "Created"
   }
 }

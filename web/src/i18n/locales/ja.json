@@ -7456,6 +7456,7 @@
     "Using another tool? Open its setup guide:": "ほかのツールを使う場合は、設定ガイドを開いてください：",
     "Code (SDK)": "コード（SDK）",
     "Other tools": "その他のツール",
-    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Claude Code の設定をターミナルで実行するか、使うツールのガイドを開きます"
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Claude Code の設定をターミナルで実行するか、使うツールのガイドを開きます",
+    "Key ready": "作成済み"
   }
 }

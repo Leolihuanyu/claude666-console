@@ -273,6 +273,31 @@ function StartStepItem(props: {
   )
 }
 
+function ToolGuideLinks() {
+  const { t } = useTranslation()
+
+  return (
+    <div className='mt-3 px-1'>
+      <div className='text-muted-foreground mb-1.5 text-xs'>
+        {t('Using another tool? Open its setup guide:')}
+      </div>
+      <div className='flex flex-wrap gap-1.5'>
+        {TOOL_GUIDES.map((tool) => (
+          <a
+            key={tool.id}
+            href={`${TOOL_GUIDE_URL}#${tool.id}`}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='bg-background/70 hover:bg-muted rounded-lg border px-2.5 py-1 text-xs transition-colors'
+          >
+            {tool.translate ? t(tool.label) : tool.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function RequestPreview(props: {
   example: RequestExample
   signals: HeroSignal[]
@@ -378,25 +403,6 @@ function RequestPreview(props: {
             >
               {line}
             </code>
-          ))}
-        </div>
-      </div>
-
-      <div className='mb-3'>
-        <div className='text-muted-foreground mb-1.5 text-xs'>
-          {t('Using another tool? Open its setup guide:')}
-        </div>
-        <div className='flex flex-wrap gap-1.5'>
-          {TOOL_GUIDES.map((tool) => (
-            <a
-              key={tool.id}
-              href={`${TOOL_GUIDE_URL}#${tool.id}`}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='bg-muted/40 hover:bg-muted rounded-lg px-2.5 py-1 text-xs transition-colors'
-            >
-              {tool.translate ? t(tool.label) : tool.label}
-            </a>
           ))}
         </div>
       </div>
@@ -588,7 +594,7 @@ export function OverviewDashboard() {
       },
       {
         label: t('API key'),
-        value: preferredKey ? t('Created') : t('Not created yet'),
+        value: preferredKey ? t('Key ready') : t('Not created yet'),
         icon: ShieldCheck,
         tone: 'success',
       },
@@ -717,6 +723,7 @@ export function OverviewDashboard() {
                             />
                           ))}
                         </ol>
+                        <ToolGuideLinks />
                       </div>
 
                       <RequestPreview

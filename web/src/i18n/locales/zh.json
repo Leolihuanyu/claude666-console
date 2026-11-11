@@ -7456,6 +7456,7 @@
     "Using another tool? Open its setup guide:": "用其他工具？打开对应教程：",
     "Code (SDK)": "代码调用",
     "Other tools": "其他工具",
-    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "复制 Claude Code 配置到终端运行，用其他工具的看下方教程"
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "复制 Claude Code 配置到终端运行，用其他工具的看下方教程",
+    "Key ready": "已创建"
   }
 }
