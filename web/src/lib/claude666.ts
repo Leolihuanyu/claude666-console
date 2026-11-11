@@ -49,3 +49,21 @@ export function apiBaseUrl(address: string): string {
     return address
   }
 }
+
+/**
+ * Setup guides for tools other than Claude Code. The steps live on the
+ * marketing site (one copy to maintain); `#id` opens that tool's dialog there.
+ * `label` is a product name, or an i18n key when `translate` is set.
+ */
+export const TOOL_GUIDE_URL = 'https://claude666.top/guides/api-quickstart'
+
+export const TOOL_GUIDES: { id: string; label: string; translate?: boolean }[] =
+  [
+    { id: 'codex', label: 'Codex' },
+    { id: 'opencode', label: 'OpenCode' },
+    { id: 'deepseek-harness', label: 'DeepSeek Harness' },
+    { id: 'vscode', label: 'Cline / Roo Code' },
+    { id: 'chat', label: 'Cherry Studio' },
+    { id: 'sdk', label: 'Code (SDK)', translate: true },
+    { id: 'other', label: 'Other tools', translate: true },
+  ]

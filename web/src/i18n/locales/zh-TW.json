@@ -7452,6 +7452,10 @@
     "Invitee reward (USD)": "被邀請人獎勵（美元）",
     "Added to the invited user's balance together with the top-up, on top of any first top-up bonus.": "隨儲值一起直接加到被邀請使用者的餘額，可與首儲贈送同時獲得。",
     "Minimum first top-up (USD)": "首儲最低金額（美元）",
-    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "首次儲值金額達到此值才發放邀請獎勵。填 0 表示不限金額。"
+    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "首次儲值金額達到此值才發放邀請獎勵。填 0 表示不限金額。",
+    "Using another tool? Open its setup guide:": "用其他工具？打開對應教學：",
+    "Code (SDK)": "程式碼呼叫",
+    "Other tools": "其他工具",
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "複製 Claude Code 設定到終端機執行，用其他工具的看下方教學"
   }
 }

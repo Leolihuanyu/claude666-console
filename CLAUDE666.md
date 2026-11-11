@@ -55,4 +55,6 @@ Changes made in this fork (branch `claude666`):
   Alipay tab. Sign-up rewards `QuotaForInviter` / `QuotaForInvitee` are meant
   to stay 0, and the inviter's invite count now grows on every invited
   registration even when `QuotaForInviter` is 0.
+- Overview: under the Claude Code setup, links to the per-tool setup guides
+  on the site (`TOOL_GUIDES` / `TOOL_GUIDE_URL` in `web/src/lib/claude666.ts`).
 - New translation keys for the texts above in `web/src/i18n/locales/*.json`.

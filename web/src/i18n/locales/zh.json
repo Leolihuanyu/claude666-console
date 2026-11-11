@@ -7452,6 +7452,10 @@
     "Invitee reward (USD)": "被邀请人奖励（美元）",
     "Added to the invited user's balance together with the top-up, on top of any first top-up bonus.": "随充值一起直接加到被邀请用户的余额，可与首充赠送同时获得。",
     "Minimum first top-up (USD)": "首充最低金额（美元）",
-    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "首次充值金额达到此值才发放邀请奖励。填 0 表示不限金额。"
+    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "首次充值金额达到此值才发放邀请奖励。填 0 表示不限金额。",
+    "Using another tool? Open its setup guide:": "用其他工具？打开对应教程：",
+    "Code (SDK)": "代码调用",
+    "Other tools": "其他工具",
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "复制 Claude Code 配置到终端运行，用其他工具的看下方教程"
   }
 }

@@ -7452,6 +7452,10 @@
     "Invitee reward (USD)": "Invitee reward (USD)",
     "Added to the invited user's balance together with the top-up, on top of any first top-up bonus.": "Added to the invited user's balance together with the top-up, on top of any first top-up bonus.",
     "Minimum first top-up (USD)": "Minimum first top-up (USD)",
-    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount."
+    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.",
+    "Using another tool? Open its setup guide:": "Using another tool? Open its setup guide:",
+    "Code (SDK)": "Code (SDK)",
+    "Other tools": "Other tools",
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Copy the Claude Code setup to a terminal, or open the guide for your tool"
   }
 }

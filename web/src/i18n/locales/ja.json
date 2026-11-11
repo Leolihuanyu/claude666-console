@@ -7452,6 +7452,10 @@
     "Invitee reward (USD)": "被招待者特典（USD）",
     "Added to the invited user's balance together with the top-up, on top of any first top-up bonus.": "チャージと同時に被招待者の残高へ加算されます。初回チャージ特典とも併用できます。",
     "Minimum first top-up (USD)": "初回チャージの最低額（USD）",
-    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "初回チャージがこの金額以上のときだけ招待特典を付与します。0 なら金額を問いません。"
+    "The first top-up must be at least this amount to earn referral rewards. 0 accepts any amount.": "初回チャージがこの金額以上のときだけ招待特典を付与します。0 なら金額を問いません。",
+    "Using another tool? Open its setup guide:": "ほかのツールを使う場合は、設定ガイドを開いてください：",
+    "Code (SDK)": "コード（SDK）",
+    "Other tools": "その他のツール",
+    "Copy the Claude Code setup to a terminal, or open the guide for your tool": "Claude Code の設定をターミナルで実行するか、使うツールのガイドを開きます"
   }
 }

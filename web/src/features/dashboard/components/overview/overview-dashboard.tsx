@@ -52,7 +52,13 @@ import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
-import { SIMPLE_CONSOLE, apiBaseUrl, claudeCodeSetup } from '@/lib/claude666'
+import {
+  SIMPLE_CONSOLE,
+  TOOL_GUIDES,
+  TOOL_GUIDE_URL,
+  apiBaseUrl,
+  claudeCodeSetup,
+} from '@/lib/claude666'
 import { handleServerError } from '@/lib/handle-server-error'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
@@ -376,6 +382,25 @@ function RequestPreview(props: {
         </div>
       </div>
 
+      <div className='mb-3'>
+        <div className='text-muted-foreground mb-1.5 text-xs'>
+          {t('Using another tool? Open its setup guide:')}
+        </div>
+        <div className='flex flex-wrap gap-1.5'>
+          {TOOL_GUIDES.map((tool) => (
+            <a
+              key={tool.id}
+              href={`${TOOL_GUIDE_URL}#${tool.id}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='bg-muted/40 hover:bg-muted rounded-lg px-2.5 py-1 text-xs transition-colors'
+            >
+              {tool.translate ? t(tool.label) : tool.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
       <div className='grid gap-2'>
         {props.signals.map((signal) => {
           const Icon = signal.icon
@@ -506,7 +531,9 @@ export function OverviewDashboard() {
       },
       {
         title: t('Set up Claude Code'),
-        description: t('Copy the Claude Code setup and run it in a terminal'),
+        description: t(
+          'Copy the Claude Code setup to a terminal, or open the guide for your tool'
+        ),
         to: '/keys',
         icon: TerminalSquare,
         completed: requestCount > 0,
