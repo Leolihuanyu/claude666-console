@@ -35,6 +35,7 @@ import { computeTimeRange } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
+import { estimateRunwayDays, RUNWAY_WINDOW_DAYS } from '../../lib/runway'
 import { StatCard } from '../ui/stat-card'
 
 const SUMMARY_SPARKLINE_BUCKETS = 12
@@ -100,22 +101,14 @@ function getSummarySparkline(
   return undefined
 }
 
-function getRunwayDays(
-  remainQuota: number,
-  recentUsage: number
-): number | null {
-  if (remainQuota <= 0 || recentUsage <= 0) return null
-  const days = remainQuota / recentUsage
-  if (!Number.isFinite(days)) return null
-  return days
-}
-
 type HealthLevel = 'healthy' | 'caution' | 'critical'
 
-function getHealthLevel(remainQuota: number, recentUsage: number): HealthLevel {
+function getHealthLevel(
+  remainQuota: number,
+  runwayDays: number | null
+): HealthLevel {
   if (remainQuota <= 0) return 'critical'
-  const days = getRunwayDays(remainQuota, recentUsage)
-  if (days !== null && days < 3) return 'caution'
+  if (runwayDays !== null && runwayDays < 3) return 'caution'
   return 'healthy'
 }
 
@@ -143,6 +136,10 @@ export function SummaryCards() {
   const { status, loading } = useStatus()
 
   const summaryTimeRange = useMemo(() => computeTimeRange(1), [])
+  const runwayTimeRange = useMemo(
+    () => computeTimeRange(RUNWAY_WINDOW_DAYS),
+    []
+  )
   const remainQuota = Number(user?.quota ?? 0)
   const usedQuota = Number(user?.used_quota ?? 0)
   const requestCount = Number(user?.request_count ?? 0)
@@ -164,6 +161,25 @@ export function SummaryCards() {
         })
       ),
     staleTime: 60 * 1000,
+  })
+
+  const runwayQuery = useQuery({
+    queryKey: [
+      'dashboard',
+      'overview',
+      'runway',
+      runwayTimeRange.start_timestamp,
+      runwayTimeRange.end_timestamp,
+    ],
+    queryFn: async () =>
+      requireServerSuccess(
+        await getUserQuotaDates({
+          start_timestamp: runwayTimeRange.start_timestamp,
+          end_timestamp: runwayTimeRange.end_timestamp,
+          default_time: 'hour',
+        })
+      ),
+    staleTime: 5 * 60 * 1000,
   })
 
   const summaryValues = useMemo(() => {
@@ -209,9 +225,12 @@ export function SummaryCards() {
     [usageTrendQuery.data?.data]
   )
 
-  const healthLevel = getHealthLevel(remainQuota, recentUsage)
+  const runwayDays = useMemo(
+    () => estimateRunwayDays(remainQuota, runwayQuery.data?.data ?? []),
+    [remainQuota, runwayQuery.data?.data]
+  )
+  const healthLevel = getHealthLevel(remainQuota, runwayDays)
   const healthCfg = HEALTH_CONFIG[healthLevel]
-  const runwayDays = getRunwayDays(remainQuota, recentUsage)
 
   const todayUsageDisplay = formatQuota(recentUsage)
   let runwayDisplay: string
@@ -226,7 +245,7 @@ export function SummaryCards() {
   } else if (remainQuota <= 0) {
     runwayDisplay = t('Balance depleted')
   } else {
-    runwayDisplay = t('No recent usage')
+    runwayDisplay = t('Shown after a few days of use')
   }
 
   const items = useSummaryCardsConfig({

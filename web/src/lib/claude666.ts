@@ -55,10 +55,11 @@ export function apiBaseUrl(address: string): string {
  * marketing site (one copy to maintain); `#id` opens that tool's dialog there.
  * `label` is a product name, or an i18n key when `translate` is set.
  */
-export const TOOL_GUIDE_URL = 'https://claude666.top/guides/api-quickstart'
+export const TOOL_GUIDE_URL = 'https://leoapi.ai/guides/api-quickstart'
 
 export const TOOL_GUIDES: { id: string; label: string; translate?: boolean }[] =
   [
+    { id: 'cc-switch', label: 'CC Switch' },
     { id: 'codex', label: 'Codex' },
     { id: 'opencode', label: 'OpenCode' },
     { id: 'deepseek-harness', label: 'DeepSeek Harness' },

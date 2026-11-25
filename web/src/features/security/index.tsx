@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { AccountSettingsTabs } from '@/components/account-settings-tabs'
 import { Link2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -142,7 +143,10 @@ export function Security() {
         {t('Security & Access')}
       </SectionPageLayout.Title>
       <SectionPageLayout.Content>
-        <div className='mx-auto w-full max-w-7xl'>{content}</div>
+        <div className='mx-auto flex w-full max-w-7xl flex-col gap-4'>
+          <AccountSettingsTabs />
+          {content}
+        </div>
       </SectionPageLayout.Content>
     </SectionPageLayout>
   )

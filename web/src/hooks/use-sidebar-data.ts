@@ -17,21 +17,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import {
-  Activity,
   Box,
   ClipboardList,
   CreditCard,
   FileText,
-  FlaskConical,
+  House,
   Key,
   LayoutDashboard,
   ListTodo,
   MessageSquare,
+  MessagesSquare,
   PlugZap,
   Radio,
   ServerCog,
   Settings,
-  ShieldCheck,
   Ticket,
   User,
   Users,
@@ -54,29 +53,23 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
   return {
     navGroups: [
       {
-        id: 'chat',
-        title: t('Chat'),
-        items: [
-          {
-            title: t('Playground'),
-            url: '/playground',
-            icon: FlaskConical,
-          },
-          {
-            title: t('Chat'),
-            icon: MessageSquare,
-            type: 'chat-presets',
-          },
-        ],
-      },
-      {
         id: 'general',
         title: t('General'),
         items: [
           {
-            title: t('Overview'),
+            title: t('Console home'),
             url: '/dashboard/overview',
-            icon: Activity,
+            icon: House,
+          },
+          {
+            title: t('Conversation'),
+            url: '/playground',
+            icon: MessageSquare,
+          },
+          {
+            title: t('Chat'),
+            icon: MessagesSquare,
+            type: 'chat-presets',
           },
           {
             title: t('Dashboard'),
@@ -117,14 +110,11 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
             icon: Wallet,
           },
           {
-            title: t('Profile'),
+            title: t('Account settings'),
             url: '/profile',
+            activeUrls: ['/security'],
+            configUrls: ['/profile', '/security'],
             icon: User,
-          },
-          {
-            title: t('Security & Access'),
-            url: '/security',
-            icon: ShieldCheck,
           },
         ],
       },

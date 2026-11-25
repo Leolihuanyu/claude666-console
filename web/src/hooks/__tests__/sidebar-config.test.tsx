@@ -48,7 +48,10 @@ import { api } from '@/lib/api'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { useSidebarConfig } from '../use-sidebar-config'
+import {
+  useIsSidebarModuleVisible,
+  useSidebarConfig,
+} from '../use-sidebar-config'
 import { useSidebarData } from '../use-sidebar-data'
 import { useSidebarView } from '../use-sidebar-view'
 
@@ -66,7 +69,12 @@ afterEach(() => {
   useAuthStore.getState().auth.reset()
 })
 
-function sidebarFor(admin?: object, user?: object, canConfigure = true) {
+function hookFor<T>(
+  hook: () => T,
+  admin?: object,
+  user?: object,
+  canConfigure = true
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -87,15 +95,35 @@ function sidebarFor(admin?: object, user?: object, canConfigure = true) {
       </QueryClientProvider>
     )
   }
-  const result = renderHook(
+  return renderHook(hook, { wrapper: Wrapper })
+}
+
+function sidebarFor(admin?: object, user?: object, canConfigure = true) {
+  return hookFor(
     () => useSidebarConfig(useSidebarData().navGroups),
-    { wrapper: Wrapper }
+    admin,
+    user,
+    canConfigure
   )
-  return result
+}
+
+// Profile and security share one "Account settings" entry; its security tab
+// follows the security module's own toggle.
+function securityVisibleFor(
+  admin?: object,
+  user?: object,
+  canConfigure = true
+) {
+  return hookFor(
+    () => useIsSidebarModuleVisible('/security'),
+    admin,
+    user,
+    canConfigure
+  ).result.current
 }
 
 describe('security sidebar visibility', () => {
-  it('old configurations show Security & Access immediately after Profile and keep API Keys', () => {
+  it('old configurations show Account settings after Wallet and keep API Keys', () => {
     const { result } = sidebarFor(
       { personal: { enabled: true, personal: true, topup: true } },
       { personal: { enabled: true, personal: true } }
@@ -104,7 +132,7 @@ describe('security sidebar visibility', () => {
       result.current
         .find((group) => group.id === 'personal')
         ?.items.map((item) => item.title)
-    ).toEqual(['Wallet', 'Profile', 'Security & Access'])
+    ).toEqual(['Wallet', 'Account settings'])
     expect(
       result.current
         .flatMap((group) => group.items)
@@ -117,26 +145,14 @@ describe('security sidebar visibility', () => {
     [undefined, { personal: { enabled: true, security: false } }],
     [undefined, { personal: { enabled: false } }],
   ])(
-    'admin or user disablement hides Security & Access (%j, %j)',
+    'admin or user disablement hides the Security & Access tab (%j, %j)',
     (admin, user) => {
-      const { result } = sidebarFor(admin, user)
-      expect(
-        result.current
-          .flatMap((group) => group.items)
-          .some((item) => item.title === 'Security & Access')
-      ).toBe(false)
+      expect(securityVisibleFor(admin, user)).toBe(false)
     }
   )
   it('users without sidebar configuration permission retain the admin view', () => {
-    const { result } = sidebarFor(
-      undefined,
-      { personal: { security: false } },
-      false
-    )
     expect(
-      result.current
-        .flatMap((group) => group.items)
-        .some((item) => item.title === 'Security & Access')
+      securityVisibleFor(undefined, { personal: { security: false } }, false)
     ).toBe(true)
   })
 })
