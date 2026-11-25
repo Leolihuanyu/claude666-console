@@ -187,7 +187,7 @@ function ReturningHome() {
   return (
     <div className='flex flex-col gap-4'>
       <SummaryCards />
-      <div className='grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'>
+      <div className='grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'>
         <ChoiceCard
           icon={
             <IconBadge tone='primary'>
