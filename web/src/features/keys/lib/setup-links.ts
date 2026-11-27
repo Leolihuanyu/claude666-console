@@ -243,7 +243,9 @@ export function buildNextChatUrl(params: {
 export const SETUP_SCRIPT = {
   mac: 'curl -fsSL https://leoapi.ai/setup.sh | bash',
   windows: 'irm https://leoapi.ai/setup.ps1 | iex',
-  macDownload: 'https://leoapi.ai/setup/leoapi-setup.command',
+  // A .command downloaded by a browser loses its execute bit, so the Mac
+  // double-click version ships zipped (unzipping restores the permission).
+  macDownload: 'https://leoapi.ai/setup/leoapi-setup-mac.zip',
   windowsDownload: 'https://leoapi.ai/setup/leoapi-setup.bat',
   guide: 'https://leoapi.ai/setup/',
 } as const

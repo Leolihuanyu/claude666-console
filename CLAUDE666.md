@@ -109,7 +109,9 @@ Changes made in this fork (branch `claude666`):
   customer picks an app from an icon grid with search, then gets one of four
   guides: the site's setup script (`curl -fsSL https://leoapi.ai/setup.sh |
   bash` / `irm https://leoapi.ai/setup.ps1 | iex`, which asks for the key; the
-  command carries none), one-click import buttons (CC Switch, Cherry Studio
+  command carries none; the Mac double-click version is
+  `leoapi.ai/setup/leoapi-setup-mac.zip`, because a downloaded `.command`
+  loses its execute bit), one-click import buttons (CC Switch, Cherry Studio
   with `type: new-api`, Chatbox, NextChat), a card of values with copy buttons
   and steps, or "not supported" with alternatives. The clients are data in
   `web/src/features/keys/lib/setup-clients.ts` (add a client there); address
@@ -120,7 +122,9 @@ Changes made in this fork (branch `claude666`):
   new backend endpoint was added. Snippets use the key's own model list
   (default `claude-sonnet-5-5`, else the first model). Cursor is marked
   experimental (Claude through our address is untested); Coze SaaS is
-  "not verified". Screenshot slots are empty for now.
+  "not verified". The Codex manual snippet puts the key in
+  `experimental_bearer_token`, like the script: Codex desktop opened from the
+  Dock does not read `~/.zshrc`. Screenshot slots are empty for now.
 - CC Switch dialog: every model field is optional, and the link carries a
   balance script (`ccSwitchUsageScript`) that asks `/api/usage/token/` with
   the key itself instead of the guide's `/api/user/self`, which would need the

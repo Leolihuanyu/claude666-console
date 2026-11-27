@@ -11,6 +11,7 @@ import {
   buildCherryStudioUrl,
   buildNextChatUrl,
   maskKey,
+  SETUP_SCRIPT,
   pickSetupModel,
   setupUrl,
   tokenModels,
@@ -219,5 +220,17 @@ describe('buildNextChatUrl', () => {
       key: KEY,
       url: BASE,
     })
+  })
+})
+
+describe('SETUP_SCRIPT', () => {
+  it('serves the Mac double-click version as a zip and keeps the Windows .bat', () => {
+    expect(SETUP_SCRIPT.macDownload).toBe(
+      'https://leoapi.ai/setup/leoapi-setup-mac.zip'
+    )
+    expect(SETUP_SCRIPT.windowsDownload).toBe(
+      'https://leoapi.ai/setup/leoapi-setup.bat'
+    )
+    expect(SETUP_SCRIPT.guide).toBe('https://leoapi.ai/setup/')
   })
 })

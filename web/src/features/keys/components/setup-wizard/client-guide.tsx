@@ -138,6 +138,19 @@ function ScriptPanel(props: { ctx: SetupContext }) {
             <Download aria-hidden='true' />
             {t('Or download the double-click version')}
           </Button>
+          <p className='text-muted-foreground text-xs'>
+            {t(
+              'Unzip the download and double-click leoapi-setup.command. If macOS says it cannot be opened, right-click it and choose Open.'
+            )}{' '}
+            <a
+              href={SETUP_SCRIPT.guide}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-primary underline-offset-4 hover:underline'
+            >
+              {t('Setup script guide')}
+            </a>
+          </p>
         </TabsContent>
         <TabsContent value='windows' className='space-y-2'>
           <p className='text-muted-foreground text-sm'>

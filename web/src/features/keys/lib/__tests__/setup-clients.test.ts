@@ -155,4 +155,14 @@ describe('setup client content', () => {
       }
     }
   })
+
+  it('writes the Codex key into the provider table, not an environment variable', () => {
+    const codex = SETUP_CLIENTS.find((c) => c.id === 'codex')
+    const text = (codex?.manual?.snippets ?? [])
+      .map((s) => s.render(CTX))
+      .join('\n')
+    expect(text).toContain(`experimental_bearer_token = "${CTX.apiKey}"`)
+    expect(text).not.toContain('env_key')
+    expect(text).not.toContain('LEOAPI_API_KEY')
+  })
 })
