@@ -91,3 +91,10 @@ Changes made in this fork (branch `claude666`):
   `ListModels`) instead of a static built-in list: 200 with the model object
   (Anthropic format with `x-api-key` + `anthropic-version`), otherwise 404
   (`model_not_found`, or Anthropic `not_found_error`).
+- Anthropic-format errors: `error.type` is always an Anthropic type, kept
+  from the upstream or derived from the status code (`claudeErrorType` in
+  `relaykit/types/error.go`; a missing upstream type used to print `"<nil>"`).
+  `upstreamErrorMessage` in `service/error.go` moves an upstream gateway's
+  `(request id: …)` from the message to the server log, so the client sees
+  only ours, and appends `(param: …)` when the upstream names one outside
+  the message.

@@ -158,3 +158,54 @@ func withDebugEnabled(t *testing.T, enabled bool) {
 		common.DebugEnabled = oldDebug
 	})
 }
+
+// Errors from an upstream gateway reached Claude clients as
+// {"type":"<nil>","message":"Invalid request body (request id: A) (request id: B)"}.
+func TestRelayErrorHandlerClaudeErrorShape(t *testing.T) {
+	tests := []struct {
+		name        string
+		status      int
+		body        string
+		wantType    string
+		wantMessage string
+	}{
+		{
+			name:        "Anthropic error keeps its type",
+			status:      http.StatusBadRequest,
+			body:        `{"type":"error","error":{"type":"invalid_request_error","message":"claude-haiku-5-5 does not support top_k"}}`,
+			wantType:    "invalid_request_error",
+			wantMessage: "claude-haiku-5-5 does not support top_k",
+		},
+		{
+			name:        "gateway error without type, with its own request id",
+			status:      http.StatusBadRequest,
+			body:        `{"type":"error","error":{"message":"Invalid request body (request id: 20261127084807445)"}}`,
+			wantType:    "invalid_request_error",
+			wantMessage: "Invalid request body",
+		},
+		{
+			name:        "OpenAI-style error names its param",
+			status:      http.StatusBadRequest,
+			body:        `{"error":{"message":"Invalid request body","type":"","param":"max_tokens","code":null}}`,
+			wantType:    "invalid_request_error",
+			wantMessage: "Invalid request body (param: max_tokens)",
+		},
+		{
+			name:        "gateway code is not an Anthropic type",
+			status:      http.StatusTooManyRequests,
+			body:        `{"error":{"message":"slow down","type":"new_api_error","code":"rate_limited"}}`,
+			wantType:    "rate_limit_error",
+			wantMessage: "slow down",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp := &http.Response{StatusCode: test.status, Body: io.NopCloser(strings.NewReader(test.body))}
+
+			claudeError := RelayErrorHandler(context.Background(), resp, false).ToClaudeError()
+
+			require.Equal(t, test.wantType, claudeError.Type)
+			require.Equal(t, test.wantMessage, claudeError.Message)
+		})
+	}
+}

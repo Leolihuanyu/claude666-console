@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -117,6 +118,7 @@ func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFai
 		// General format error (OpenAI, Anthropic, Gemini, etc.)
 		oaiError := errResponse.TryToOpenAIError()
 		if oaiError != nil {
+			oaiError.Message = upstreamErrorMessage(ctx, oaiError.Message, oaiError.Param)
 			newApiErr = types.WithOpenAIError(*oaiError, resp.StatusCode)
 			if showBodyWhenFail {
 				newApiErr.Err = buildErrWithBody(newApiErr.Error())
@@ -124,7 +126,7 @@ func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFai
 			return
 		}
 	}
-	message := errResponse.ToMessage()
+	message := upstreamErrorMessage(ctx, errResponse.ToMessage(), "")
 	if message == "" {
 		// The body parsed as JSON but carried no usable error message; log the
 		// raw body so the upstream failure remains diagnosable.
@@ -135,6 +137,24 @@ func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFai
 		newApiErr.Err = buildErrWithBody(newApiErr.Error())
 	}
 	return
+}
+
+var upstreamRequestIDPattern = regexp.MustCompile(`\s*\(request id: [^)]*\)`)
+
+// upstreamErrorMessage prepares an upstream error message for the client. An
+// upstream gateway's "(request id: …)" is moved to the log, since the relay
+// appends its own and clients saw two. The offending parameter is named when
+// the upstream reports it outside the message, so a bare "Invalid request
+// body" still says which field to fix.
+func upstreamErrorMessage(ctx context.Context, message string, param string) string {
+	if ids := upstreamRequestIDPattern.FindAllString(message, -1); len(ids) > 0 {
+		logger.LogWarn(ctx, common.LogText("upstream error carried its own request id: %s", strings.TrimSpace(strings.Join(ids, " "))))
+		message = strings.TrimSpace(upstreamRequestIDPattern.ReplaceAllString(message, ""))
+	}
+	if param = strings.TrimSpace(param); param != "" && message != "" && !strings.Contains(message, param) {
+		message = fmt.Sprintf("%s (param: %s)", message, param)
+	}
+	return message
 }
 
 func ResetStatusCode(newApiErr *types.NewAPIError, statusCodeMappingStr string) {
