@@ -122,7 +122,7 @@ function ScriptPanel(props: { ctx: SetupContext }) {
       <Tabs defaultValue={isWindows ? 'windows' : 'mac'}>
         <TabsList>
           <TabsTrigger value='mac'>macOS</TabsTrigger>
-          <TabsTrigger value='windows'>Windows</TabsTrigger>
+          <TabsTrigger value='windows'>{t('Windows (beta)')}</TabsTrigger>
         </TabsList>
         <TabsContent value='mac' className='space-y-2'>
           <p className='text-muted-foreground text-sm'>
@@ -157,6 +157,13 @@ function ScriptPanel(props: { ctx: SetupContext }) {
             {t('Open PowerShell, paste this command and press Enter:')}
           </p>
           <CommandLine command={SETUP_SCRIPT.windows} />
+          {/* The Windows script has not been run on a real machine yet. */}
+          <p className='text-muted-foreground text-xs'>
+            {t(
+              'The Windows version is still in testing. If it fails, expand "{{manual}}" below, or send us a screenshot of the error.',
+              { manual: t('Set it up by hand instead') }
+            )}
+          </p>
           <Button
             variant='link'
             size='sm'

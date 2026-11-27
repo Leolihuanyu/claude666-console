@@ -111,7 +111,8 @@ Changes made in this fork (branch `claude666`):
   bash` / `irm https://leoapi.ai/setup.ps1 | iex`, which asks for the key; the
   command carries none; the Mac double-click version is
   `leoapi.ai/setup/leoapi-setup-mac.zip`, because a downloaded `.command`
-  loses its execute bit), one-click import buttons (CC Switch, Cherry Studio
+  loses its execute bit; the Windows tab is labelled beta, since that script
+  has not run on a real machine yet), one-click import buttons (CC Switch, Cherry Studio
   with `type: new-api`, Chatbox, NextChat), a card of values with copy buttons
   and steps, or "not supported" with alternatives. The clients are data in
   `web/src/features/keys/lib/setup-clients.ts` (add a client there); address

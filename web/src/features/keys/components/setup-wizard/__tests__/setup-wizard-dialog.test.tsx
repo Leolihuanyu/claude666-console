@@ -164,4 +164,19 @@ describe('setup wizard', () => {
       /^cherrystudio:\/\/providers\/api-keys\?v=1&data=/
     )
   })
+
+  it('labels the Windows script as beta and points to the manual setup', async () => {
+    renderWizard()
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Claude Code' }))
+    await user.click(screen.getByRole('tab', { name: 'Windows (beta)' }))
+
+    expect(
+      screen.getByText('irm https://leoapi.ai/setup.ps1 | iex')
+    ).toBeVisible()
+    expect(
+      screen.getByText(/The Windows version is still in testing/)
+    ).toHaveTextContent('"Set it up by hand instead"')
+  })
 })
