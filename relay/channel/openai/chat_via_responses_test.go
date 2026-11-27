@@ -258,16 +258,27 @@ func TestOaiChatToResponsesStreamHandlerConvertsSSEOrderAndUsage(t *testing.T) {
 	require.Contains(t, got, `event: response.completed`)
 	require.Contains(t, got, `"input_tokens":2`)
 	require.Contains(t, got, `"output_tokens":3`)
+	// One item at a time, as OpenAI streams: the message finishes before the
+	// function call is added.
 	requireOrderedSubstrings(t, got,
 		`event: response.created`,
+		`event: response.in_progress`,
 		`event: response.output_item.added`,
+		`event: response.content_part.added`,
 		`event: response.output_text.delta`,
+		`event: response.output_text.done`,
+		`event: response.content_part.done`,
+		`event: response.output_item.done`,
 		`event: response.output_item.added`,
 		`event: response.function_call_arguments.delta`,
-		`event: response.output_text.done`,
 		`event: response.function_call_arguments.done`,
+		`event: response.output_item.done`,
 		`event: response.completed`,
 	)
+	completed := got[strings.Index(got, `event: response.completed`):]
+	require.Contains(t, completed, `"usage":{"input_tokens":2,"input_tokens_details":{"cached_tokens":0},"output_tokens":3,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5}`)
+	require.NotContains(t, completed, `prompt_tokens`)
+	require.NotContains(t, completed, `billing_usage`)
 }
 
 func TestOaiChatToResponsesStreamHandlerRestoresCodexCustomToolCall(t *testing.T) {

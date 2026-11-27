@@ -1,6 +1,7 @@
 package oaichat
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/QuantumNous/new-api/relaykit/dto"
@@ -432,6 +433,7 @@ func TestChatCompletionsStreamToResponsesRestoresCustomToolCalls(t *testing.T) {
 	}
 	assert.Equal(t, []string{
 		responsesEventCreated,
+		responsesEventInProgress,
 		responsesEventOutputItemAdded,
 		responsesEventOutputItemAdded,
 		responsesEventFunctionArgsDelta,
@@ -443,15 +445,15 @@ func TestChatCompletionsStreamToResponsesRestoresCustomToolCalls(t *testing.T) {
 		responsesEventCompleted,
 	}, types)
 
-	added, err := kitutil.Marshal(events[1].Payload.Item)
+	added, err := kitutil.Marshal(events[2].Payload.Item)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"custom_tool_call","id":"call_exec","status":"in_progress","call_id":"call_exec","name":"exec","input":""}`, string(added))
-	assert.Equal(t, `echo "hi"`, events[4].Payload.Delta)
-	assert.Equal(t, "call_exec", events[4].Payload.ItemID)
-	require.NotNil(t, events[5].Payload.Input)
-	assert.Equal(t, `echo "hi"`, *events[5].Payload.Input)
-	assert.Equal(t, responsesOutputTypeCustomToolCall, events[6].Payload.Item.Type)
-	assert.Equal(t, `"echo \"hi\""`, string(events[6].Payload.Item.Input))
+	assert.Equal(t, `echo "hi"`, events[5].Payload.Delta)
+	assert.Equal(t, "call_exec", events[5].Payload.ItemID)
+	require.NotNil(t, events[6].Payload.Input)
+	assert.Equal(t, `echo "hi"`, *events[6].Payload.Input)
+	assert.Equal(t, responsesOutputTypeCustomToolCall, events[7].Payload.Item.Type)
+	assert.Equal(t, `"echo \"hi\""`, string(events[7].Payload.Item.Input))
 
 	output := events[len(events)-1].Payload.Response.Output
 	require.Len(t, output, 2)
@@ -578,4 +580,91 @@ func mustResponsesEventsFromChatChunk(t *testing.T, state *ChatToResponsesStream
 	events, err := ChatCompletionsStreamChunkToResponsesEvents(chunk, state)
 	require.NoError(t, err)
 	return events
+}
+
+// The OpenAI SDK's responses.stream() rebuilds the response from these events:
+// text deltas go into the part content_part.added created, and the final usage
+// is read as Responses usage. Items are streamed one at a time.
+func TestChatCompletionsStreamToResponsesFollowsResponsesWireContract(t *testing.T) {
+	toolIndex := 0
+	stop, toolCalls := "stop", "tool_calls"
+	chatUsage := &dto.Usage{
+		PromptTokens: 15, CompletionTokens: 5, TotalTokens: 20,
+		PromptTokensDetails:         dto.InputTokenDetails{CachedTokens: 3},
+		UsageSource:                 "anthropic",
+		BillingUsage:                &dto.BillingUsage{Source: "claude_messages"},
+		ClaudeCacheCreation5mTokens: 2,
+	}
+	tests := []struct {
+		name   string
+		chunks []*dto.ChatCompletionsStreamResponse
+		types  []string
+	}{
+		{
+			name: "text only",
+			chunks: []*dto.ChatCompletionsStreamResponse{
+				{Choices: []dto.ChatCompletionsStreamResponseChoice{{Delta: dto.ChatCompletionsStreamResponseChoiceDelta{Content: lo.ToPtr("Hi")}}}},
+				{Choices: []dto.ChatCompletionsStreamResponseChoice{{FinishReason: &stop}}},
+			},
+			types: []string{
+				responsesEventCreated, responsesEventInProgress,
+				responsesEventOutputItemAdded, responsesEventContentPartAdded,
+				responsesEventOutputTextDelta, "response.output_text.done", responsesEventContentPartDone, responsesEventOutputItemDone,
+				responsesEventCompleted,
+			},
+		},
+		{
+			name: "text then function call",
+			chunks: []*dto.ChatCompletionsStreamResponse{
+				{Choices: []dto.ChatCompletionsStreamResponseChoice{{Delta: dto.ChatCompletionsStreamResponseChoiceDelta{Content: lo.ToPtr("Hi")}}}},
+				{Choices: []dto.ChatCompletionsStreamResponseChoice{{Delta: dto.ChatCompletionsStreamResponseChoiceDelta{ToolCalls: []dto.ToolCallResponse{{
+					Index: &toolIndex, ID: "call_1", Type: "function", Function: dto.FunctionResponse{Name: "lookup", Arguments: `{"q":1}`},
+				}}}}}},
+				{Choices: []dto.ChatCompletionsStreamResponseChoice{{FinishReason: &toolCalls}}},
+			},
+			types: []string{
+				responsesEventCreated, responsesEventInProgress,
+				responsesEventOutputItemAdded, responsesEventContentPartAdded,
+				responsesEventOutputTextDelta, "response.output_text.done", responsesEventContentPartDone, responsesEventOutputItemDone,
+				responsesEventOutputItemAdded, responsesEventFunctionArgsDelta, responsesEventFunctionArgsDone, responsesEventOutputItemDone,
+				responsesEventCompleted,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			state := NewChatToResponsesStreamState("resp_1", "claude-haiku-5-5")
+			state.EmitSequenceNumber = true
+			var events []ChatToResponsesStreamEvent
+			for _, chunk := range test.chunks {
+				events = append(events, mustResponsesEventsFromChatChunk(t, state, chunk)...)
+			}
+			state.SetStreamUsage(chatUsage)
+			events = append(events, FinalizeChatCompletionsStreamToResponses(state)...)
+
+			types := make([]string, 0, len(events))
+			for _, event := range events {
+				types = append(types, event.Type)
+			}
+			require.Equal(t, test.types, types)
+
+			partAdded, err := kitutil.Marshal(events[3].Payload)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"type":"response.content_part.added","sequence_number":3,"output_index":0,"content_index":0,"item_id":"resp_1_msg_0","part":{"type":"output_text","text":"","annotations":[]}}`, string(partAdded))
+			partDone := events[6].Payload
+			require.NotNil(t, partDone.Part)
+			assert.Equal(t, "Hi", partDone.Part.Text)
+			require.NotNil(t, events[5].Payload.Text)
+			assert.Equal(t, "Hi", *events[5].Payload.Text)
+
+			completed, err := kitutil.Marshal(events[len(events)-1].Payload.Response)
+			require.NoError(t, err)
+			var response map[string]json.RawMessage
+			require.NoError(t, kitutil.Unmarshal(completed, &response))
+			assert.JSONEq(t, `{"input_tokens":15,"input_tokens_details":{"cached_tokens":3},"output_tokens":5,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":20}`, string(response["usage"]))
+			// Billing still reads the full usage from the state.
+			require.NotNil(t, state.StreamUsage().BillingUsage)
+			assert.Equal(t, "claude_messages", state.StreamUsage().BillingUsage.Source)
+		})
+	}
 }

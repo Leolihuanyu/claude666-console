@@ -382,6 +382,69 @@ type OpenAIResponsesResponse struct {
 	Usage              *Usage             `json:"usage"`
 	User               json.RawMessage    `json:"user"`
 	Metadata           json.RawMessage    `json:"metadata"`
+	// WireUsage, when set, is written as "usage" in place of Usage. Converters
+	// set it on responses they build for clients: Usage also carries the
+	// chat-format and internal billing fields the host reads.
+	WireUsage *ResponsesUsage `json:"-"`
+}
+
+func (o OpenAIResponsesResponse) MarshalJSON() ([]byte, error) {
+	type plain OpenAIResponsesResponse
+	if o.WireUsage == nil {
+		return kitutil.Marshal(plain(o))
+	}
+	return kitutil.Marshal(struct {
+		plain
+		Usage *ResponsesUsage `json:"usage"`
+	}{plain: plain(o), Usage: o.WireUsage})
+}
+
+// ResponsesUsage is the usage object of the OpenAI Responses API.
+type ResponsesUsage struct {
+	InputTokens         int                          `json:"input_tokens"`
+	InputTokensDetails  ResponsesInputTokensDetails  `json:"input_tokens_details"`
+	OutputTokens        int                          `json:"output_tokens"`
+	OutputTokensDetails ResponsesOutputTokensDetails `json:"output_tokens_details"`
+	TotalTokens         int                          `json:"total_tokens"`
+}
+
+type ResponsesInputTokensDetails struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
+type ResponsesOutputTokensDetails struct {
+	ReasoningTokens int `json:"reasoning_tokens"`
+}
+
+// NewResponsesUsage reads the Responses counts of a converted usage; nil
+// stays nil. input_tokens already includes cached and cache-write tokens.
+func NewResponsesUsage(usage *Usage) *ResponsesUsage {
+	if usage == nil {
+		return nil
+	}
+	wire := &ResponsesUsage{
+		InputTokens:  usage.InputTokens,
+		OutputTokens: usage.OutputTokens,
+		TotalTokens:  usage.TotalTokens,
+	}
+	if wire.InputTokens == 0 {
+		wire.InputTokens = usage.PromptTokens
+	}
+	if wire.OutputTokens == 0 {
+		wire.OutputTokens = usage.CompletionTokens
+	}
+	if wire.TotalTokens == 0 {
+		wire.TotalTokens = wire.InputTokens + wire.OutputTokens
+	}
+	wire.InputTokensDetails.CachedTokens = usage.PromptTokensDetails.CachedTokens
+	if usage.InputTokensDetails != nil && usage.InputTokensDetails.CachedTokens != 0 {
+		wire.InputTokensDetails.CachedTokens = usage.InputTokensDetails.CachedTokens
+	}
+	wire.OutputTokensDetails.ReasoningTokens = usage.CompletionTokenDetails.ReasoningTokens
+	if usage.OutputTokensDetails != nil && usage.OutputTokensDetails.ReasoningTokens != 0 {
+		wire.OutputTokensDetails.ReasoningTokens = usage.OutputTokensDetails.ReasoningTokens
+	}
+	return wire
 }
 
 // GetOpenAIError 从动态错误类型中提取OpenAIError结构
@@ -579,9 +642,12 @@ type ResponsesOutputContent struct {
 	Annotations []any  `json:"annotations"`
 }
 
+// ResponsesReasoningSummaryPart is the part of reasoning_summary_part and
+// content_part events. Annotations is set only on output_text parts.
 type ResponsesReasoningSummaryPart struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type        string          `json:"type"`
+	Text        string          `json:"text"`
+	Annotations json.RawMessage `json:"annotations,omitempty"`
 }
 
 const (

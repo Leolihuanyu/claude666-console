@@ -17,6 +17,9 @@ const (
 	chatFinishReasonContentFilter = "content_filter"
 
 	responsesEventCreated                   = "response.created"
+	responsesEventInProgress                = "response.in_progress"
+	responsesEventContentPartAdded          = "response.content_part.added"
+	responsesEventContentPartDone           = "response.content_part.done"
 	responsesEventCompleted                 = "response.completed"
 	responsesEventIncomplete                = "response.incomplete"
 	responsesEventOutputTextDelta           = "response.output_text.delta"

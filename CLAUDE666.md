@@ -75,3 +75,14 @@ Changes made in this fork (branch `claude666`):
   in `relay/claude_handler.go`, logged as conversion diagnostic
   `claude_sampling_removed`), like the chat conversion already did. Body
   pass-through is not touched. No console UI yet; set it with `PUT /api/option`.
+- Responses streams converted from chat-shaped upstreams (Claude, Gemini,
+  chat-only OpenAI channels on `/v1/responses`;
+  `relaykit/relayconvert/internal/oai_chat/to_oai_responses_stream_resp.go`,
+  only under `EmitSequenceNumber`, which those three handlers set): adds
+  `response.in_progress` and `response.content_part.added/done`, sends the
+  full text on `output_text.done`, and finishes an open message or reasoning
+  item before the next item is added. The final event's `usage` is the
+  Responses object (`input_tokens`, `output_tokens`, `total_tokens`, cached
+  and reasoning details) via `OpenAIResponsesResponse.WireUsage`
+  (`relaykit/dto/openai_response.go`); the chat-format and billing fields stay
+  on the state usage the host bills from.
