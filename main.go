@@ -204,7 +204,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: server,
+		Handler: router.APIPathFallback(server),
 	}
 
 	go func() {

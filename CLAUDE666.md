@@ -57,4 +57,21 @@ Changes made in this fork (branch `claude666`):
   registration even when `QuotaForInviter` is 0.
 - Overview: under the three setup steps, links to the per-tool setup guides
   on the site (`TOOL_GUIDES` / `TOOL_GUIDE_URL` in `web/src/lib/claude666.ts`).
+- API path fallback for mistyped base URLs: `router/api_path_fallback.go`
+  (`APIPathFallback`, wrapped around the Gin engine in `main.go`) rewrites the
+  path before routing, so the request runs the normal `/v1` chain (auth, rate
+  limit, billing, logs; logs show the `/v1` path). `/v1/v1/...` becomes
+  `/v1/...`; POST `/messages`, `/chat/completions`, `/completions`,
+  `/responses`, `/embeddings` get `/v1`; GET `/models` gets `/v1` only with
+  `x-api-key` or `Authorization: Bearer`, because `/models` is also a console
+  page (browsers never send those on navigation; `Basic` is ignored for
+  consoles behind HTTP basic auth). `/messages/count_tokens` is not rewritten
+  because `/v1/messages/count_tokens` is disabled upstream.
+- Non-GET/HEAD/OPTIONS requests that no route took and that are outside
+  `/v1`, `/api`, `/assets` (POST `/` and the like) get a 404 OpenAI-style error
+  (`code: invalid_url`) with a Chinese/English hint naming the base URLs,
+  instead of the console HTML with 200 (`wrongPathGuard` in
+  `router/web-router.go`, also on the `FRONTEND_BASE_URL` redirect in
+  `router/main.go`; `controller.RelayWrongPath`). The address is
+  `ServerAddress` with `console.` mapped to `api.`, as in `apiBaseUrl`.
 - New translation keys for the texts above in `web/src/i18n/locales/*.json`.
