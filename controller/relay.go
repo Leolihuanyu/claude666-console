@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -410,6 +412,51 @@ func RelayNotFound(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{
 		"error": err,
 	})
+}
+
+// RelayWrongPath answers requests outside the console and the API (POST /, a
+// base URL without its endpoint path) with an OpenAI-style 404 that names the
+// base URLs to use. Clients that got the console HTML with 200 here failed to
+// parse it and retried in a tight loop.
+//
+// The message is one fixed bilingual sentence instead of an i18n key: these
+// clients rarely send Accept-Language, and the person reading it may use
+// either language.
+func RelayWrongPath(c *gin.Context) {
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, private, max-age=0")
+	openAIBase, anthropicBase := "<API 地址>/v1", "<API 地址>"
+	openAIBaseEn, anthropicBaseEn := "<API address>/v1", "<API address>"
+	if address := customerAPIAddress(system_setting.ServerAddress); address != "" {
+		openAIBase, anthropicBase = address+"/v1", address
+		openAIBaseEn, anthropicBaseEn = openAIBase, anthropicBase
+	}
+	message := fmt.Sprintf(
+		"请求路径不对（%s %s）。OpenAI 格式的 Base URL 填 %s（部分客户端要求完整地址 %s/chat/completions）；Claude/Anthropic 格式填 %s。"+
+			" Wrong request path (%s %s). For the OpenAI format use the base URL %s (some clients need the full endpoint %s/chat/completions); for the Claude/Anthropic format use %s.",
+		c.Request.Method, c.Request.URL.Path, openAIBase, openAIBase, anthropicBase,
+		c.Request.Method, c.Request.URL.Path, openAIBaseEn, openAIBaseEn, anthropicBaseEn,
+	)
+	c.JSON(http.StatusNotFound, gin.H{
+		"error": types.OpenAIError{
+			Message: message,
+			Type:    "invalid_request_error",
+			Code:    "invalid_url",
+		},
+	})
+}
+
+// customerAPIAddress turns the configured ServerAddress (the console host) into
+// the API origin customers configure. Same console.→api. mapping as apiBaseUrl
+// in web/src/lib/claude666.ts (see CLAUDE666.md). Returns "" when unusable.
+func customerAPIAddress(serverAddress string) string {
+	u, err := url.Parse(strings.TrimSpace(serverAddress))
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return ""
+	}
+	if rest, ok := strings.CutPrefix(u.Host, "console."); ok {
+		u.Host = "api." + rest
+	}
+	return u.Scheme + "://" + u.Host
 }
 
 // RelayTaskPluginEndpoint keeps unclaimed shared-endpoint traffic on its

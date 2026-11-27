@@ -25,6 +25,7 @@ func SetWebRouter(router *gin.Engine, assets WebAssets, pluginDispatcher gin.Han
 	router.NoRoute(
 		pluginDispatcher,
 		middleware.RouteTag("web"),
+		wrongPathGuard,
 		func(c *gin.Context) {
 			// ServeFrontendFiles sends build files already compressed.
 			if !frontendFS.Exists("/", c.Request.URL.Path) {
@@ -44,4 +45,22 @@ func SetWebRouter(router *gin.Engine, assets WebAssets, pluginDispatcher gin.Han
 			c.Data(http.StatusOK, "text/html; charset=utf-8", assets.IndexPage)
 		},
 	)
+}
+
+// wrongPathGuard stops non-GET requests that no API route took before they
+// reach the console's static files and index.html fallback, which would answer
+// them with HTML and 200. The console only receives GET/HEAD page loads;
+// OPTIONS is left alone because CORS preflights are answered by middleware.CORS.
+// /v1, /api and /assets keep their existing handling further down the chain.
+func wrongPathGuard(c *gin.Context) {
+	switch c.Request.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return
+	}
+	path := c.Request.URL.Path
+	if strings.HasPrefix(path, "/v1") || strings.HasPrefix(path, "/api") || strings.HasPrefix(path, "/assets") {
+		return
+	}
+	controller.RelayWrongPath(c)
+	c.Abort()
 }
