@@ -165,4 +165,22 @@ describe('setup client content', () => {
     expect(text).not.toContain('env_key')
     expect(text).not.toContain('LEOAPI_API_KEY')
   })
+
+  it('gives every menu path at least two distinct non-empty levels', () => {
+    for (const client of SETUP_CLIENTS) {
+      const path = client.manual?.menuPath
+      if (!path) continue
+      expect(path.length, client.id).toBeGreaterThanOrEqual(2)
+      for (const step of path) expect(step.trim(), client.id).not.toBe('')
+      // Labels key the rendered boxes, so a path must not repeat one.
+      expect(new Set(path).size, client.id).toBe(path.length)
+    }
+  })
+
+  it('leaves out menu paths the client docs only know from community posts', () => {
+    const byId = new Map(SETUP_CLIENTS.map((c) => [c.id, c]))
+    for (const id of ['immersive-translate', 'obsidian-copilot', 'nextchat']) {
+      expect(byId.get(id)?.manual?.menuPath, id).toBeUndefined()
+    }
+  })
 })

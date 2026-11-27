@@ -92,7 +92,13 @@ export interface ManualGuide {
   steps: string[]
   snippets?: SetupSnippet[]
   notes?: string[]
-  /** Screenshot path under `public/`; empty until screenshots are taken. */
+  /**
+   * Menu path to the settings screen, as labels the client itself shows (not
+   * translated). Only paths the leoapi-ops client docs record from official
+   * docs or source; leave it out when a path is only guessed.
+   */
+  menuPath?: string[]
+  /** Screenshot path under `public/`; nothing is shown without one. */
   screenshot?: string
 }
 
@@ -590,6 +596,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['vscode'],
     summary: 'VS Code extension',
     manual: {
+      // clients-ide.md §7, official
+      menuPath: ['Cline', '⚙️', 'API Provider', 'Anthropic'],
       fields: [
         { label: 'API Provider', value: { kind: 'text', text: 'Anthropic' } },
         { label: 'Custom base URL', value: { kind: 'url', url: 'root' } },
@@ -701,6 +709,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     experimental: true,
     modelFamily: 'gpt',
     manual: {
+      // clients-ide.md §1 (Cursor Settings and Models official; Override OpenAI Base URL from community posts) and the setup table
+      menuPath: ['Cursor Settings', 'Models', 'Override OpenAI Base URL'],
       fields: [
         { label: 'OpenAI API Key', value: { kind: 'key' } },
         {
@@ -731,6 +741,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['trae.cn', 'trae.ai', 'bytedance'],
     summary: 'China and international editions',
     manual: {
+      // clients-ide.md §2, official
+      menuPath: ['设置', '模型', '添加模型', '自定义模型'],
       fields: [
         {
           label: 'API format',
@@ -769,6 +781,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['jetbrains', 'idea', 'pycharm', 'webstorm', 'goland'],
     summary: 'IntelliJ IDEA, PyCharm and other JetBrains IDEs',
     manual: {
+      // clients-ide.md §6, official
+      menuPath: ['Settings', 'Tools', 'AI Assistant', 'Providers & API keys'],
       fields: [
         {
           label: 'Provider',
@@ -795,6 +809,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     icon: 'Qoder',
     summary: 'International edition',
     manual: {
+      // clients-ide.md §13, official
+      menuPath: ['Settings', 'Models', 'Add model', 'Custom'],
       fields: [
         {
           label: 'Provider',
@@ -865,6 +881,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
       'In Settings > Model Provider, turn on the provider, click Manage to add models, then click Check.',
     ],
     manual: {
+      // clients-chat.md §2, official
+      menuPath: ['设置', '模型服务', 'New API'],
       fields: [
         { label: 'Provider type', value: { kind: 'text', text: 'New API' } },
         { label: 'API address', value: { kind: 'url', url: 'root' } },
@@ -905,6 +923,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
       'Pick the LeoAPI provider and a model in a new chat.',
     ],
     manual: {
+      // clients-chat.md §3, official
+      menuPath: ['设置', '模型提供方 (Model Provider)', '添加'],
       fields: [
         {
           label: 'API mode',
@@ -963,6 +983,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     tier: 'manual',
     summary: 'Desktop chat app',
     manual: {
+      // clients-chat.md §4, official
+      menuPath: ['Settings', 'Providers', '+'],
       fields: [
         {
           label: 'Provider type',
@@ -987,6 +1009,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['lobechat', 'lobe chat'],
     summary: 'Formerly LobeChat',
     manual: {
+      // clients-chat.md §5, source locales
+      menuPath: ['设置', 'AI 服务商'],
       fields: [
         { label: 'Provider', value: { kind: 'text', text: 'New API' } },
         { label: 'API address', value: { kind: 'url', url: 'root' } },
@@ -1010,6 +1034,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     icon: 'OpenWebUI',
     summary: 'Self-hosted web chat',
     manual: {
+      // clients-chat.md §7, official
+      menuPath: ['管理员面板', 'Settings', 'Connections', 'Add Connection'],
       fields: [{ label: 'URL', value: { kind: 'url', url: 'v1' } }, KEY_FIELD],
       steps: [
         'Open Admin Panel > Settings > Connections.',
@@ -1025,6 +1051,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     tier: 'manual',
     summary: 'Desktop knowledge base chat',
     manual: {
+      // clients-chat.md §8, official
+      menuPath: ['Settings', 'LLM Preference', 'Generic OpenAI'],
       fields: [
         {
           label: 'LLM Provider',
@@ -1054,6 +1082,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['tencent'],
     summary: 'Tencent office agent',
     manual: {
+      // clients-chat.md §9, official and Alibaba Cloud docs
+      menuPath: ['左下角头像', '设置', '模型', '添加模型'],
       fields: [
         {
           label: 'Provider',
@@ -1111,6 +1141,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     keywords: ['raycast'],
     summary: 'Custom providers (Pro)',
     manual: {
+      // clients-chat.md §12, official
+      menuPath: ['Settings', 'AI', 'Models & Providers', 'Custom Providers'],
       fields: [
         { label: 'base_url', literal: true, value: { kind: 'url', url: 'v1' } },
         KEY_FIELD,
@@ -1386,6 +1418,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     icon: 'Dify',
     summary: 'LLM app platform',
     manual: {
+      // clients-sdk.md §9, official docs
+      menuPath: ['集成 (Integrations)', '模型供应商 (Model Provider)'],
       fields: [
         {
           label: 'Anthropic plugin: API URL',
@@ -1418,6 +1452,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     icon: 'N8n',
     summary: 'Workflow automation',
     manual: {
+      // clients-sdk.md §10
+      menuPath: ['Credentials', 'Create credential'],
       fields: [
         {
           label: 'Anthropic credential: Base URL',
@@ -1448,6 +1484,8 @@ export const SETUP_CLIENTS: SetupClient[] = [
     icon: 'FastGPT',
     summary: 'Knowledge base and workflow platform',
     manual: {
+      // clients-sdk.md §13, official docs
+      menuPath: ['管理后台', '系统资源', '系统模型', '模型渠道'],
       fields: [
         { label: 'Proxy address', value: { kind: 'url', url: 'v1' } },
         KEY_FIELD,

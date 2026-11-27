@@ -125,7 +125,12 @@ Changes made in this fork (branch `claude666`):
   experimental (Claude through our address is untested); Coze SaaS is
   "not verified". The Codex manual snippet puts the key in
   `experimental_bearer_token`, like the script: Codex desktop opened from the
-  Dock does not read `~/.zshrc`. Screenshot slots are empty for now.
+  Dock does not read `~/.zshrc`. There are no screenshots of third-party
+  apps and none are faked: without one nothing is shown. Instead, clients
+  whose docs record the menu path (`menuPath`, labels as the app shows them,
+  official docs or source only; community-only or guessed paths left out)
+  get a drawn path diagram (`menu-path-diagram.tsx`): one box per level, the
+  last highlighted, with the values to fill in below and the key masked.
 - CC Switch dialog: every model field is optional, and the link carries a
   balance script (`ccSwitchUsageScript`) that asks `/api/usage/token/` with
   the key itself instead of the guide's `/api/user/self`, which would need the

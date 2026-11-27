@@ -2,7 +2,7 @@
 Claude服务站 changes to new-api, distributed under the same
 GNU Affero General Public License v3.0 (see LICENSE and NOTICE).
 */
-import { ImageIcon, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
@@ -13,6 +13,7 @@ import type {
   SetupField,
 } from '../../lib/setup-clients'
 import { maskKey, setupUrl } from '../../lib/setup-links'
+import { MenuPathDiagram } from './menu-path-diagram'
 
 interface ManualGuideViewProps {
   guide: ManualGuide
@@ -64,6 +65,9 @@ export function ManualGuideView(props: ManualGuideViewProps) {
 
   return (
     <div className='space-y-5'>
+      {props.guide.menuPath && (
+        <MenuPathDiagram path={props.guide.menuPath} fields={fields} />
+      )}
       {fields.length > 0 && (
         <section className='space-y-2'>
           <h4 className='text-sm font-medium'>{t('Fill in these values')}</h4>
@@ -136,21 +140,13 @@ export function ManualGuideView(props: ManualGuideViewProps) {
         </section>
       )}
 
-      {props.guide.screenshot ? (
+      {props.guide.screenshot && (
         <img
           src={props.guide.screenshot}
           alt={t('Screenshot')}
           className='w-full rounded-lg border'
           loading='lazy'
         />
-      ) : (
-        <div
-          className='text-muted-foreground flex items-center justify-center gap-2 rounded-lg border border-dashed py-6 text-xs'
-          data-slot='screenshot-placeholder'
-        >
-          <ImageIcon className='size-4' aria-hidden='true' />
-          {t('Screenshot coming soon')}
-        </div>
       )}
     </div>
   )
