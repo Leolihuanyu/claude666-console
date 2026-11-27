@@ -58,3 +58,11 @@ Changes made in this fork (branch `claude666`):
 - Overview: under the three setup steps, links to the per-tool setup guides
   on the site (`TOOL_GUIDES` / `TOOL_GUIDE_URL` in `web/src/lib/claude666.ts`).
 - New translation keys for the texts above in `web/src/i18n/locales/*.json`.
+- Gemini actions the relay does not serve: `rejectUnservedGeminiAction` in
+  `router/relay-router.go` runs before auth on `/v1` and `/v1beta`. POST
+  `models/{m}:countTokens` gets a Gemini-format 501 `UNIMPLEMENTED`, any other
+  action outside generateContent / streamGenerateContent / embedContent /
+  batchEmbedContents / predict / predictLongRunning a 404 `NOT_FOUND`. Before,
+  `/v1/models/{m}:countTokens` (google-genai's default `v1`) ran as a billed
+  generateContent; consume logs with `other.request_path` ending in
+  `:countTokens` are those requests.
