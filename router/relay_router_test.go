@@ -146,6 +146,58 @@ func TestGeminiRelayHandsLongRunningPredictionToPluginRoute(t *testing.T) {
 	}
 }
 
+// countTokens and unknown actions used to be relayed as generateContent and
+// billed; they must stop before channel selection and the relay.
+func TestGeminiRelayRejectsActionsItDoesNotServe(t *testing.T) {
+	setupRelayRouterTestDB(t)
+	require.NoError(t, i18n.Init())
+	user := model.User{Username: "gemini-action-user", Status: common.UserStatusEnabled, Group: "default", Quota: 100}
+	require.NoError(t, model.DB.Create(&user).Error)
+	require.NoError(t, model.DB.Create(&model.Token{UserId: user.Id, Key: "geminiactionkey", Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true}).Error)
+
+	engine := gin.New()
+	SetRelayRouter(engine)
+
+	for _, testCase := range []struct {
+		path       string
+		status     int
+		grpcStatus string
+	}{
+		{path: "/v1/models/claude-haiku-5-5:countTokens", status: http.StatusNotImplemented, grpcStatus: "UNIMPLEMENTED"},
+		{path: "/v1beta/models/claude-haiku-5-5:countTokens", status: http.StatusNotImplemented, grpcStatus: "UNIMPLEMENTED"},
+		{path: "/v1/models/claude-haiku-5-5:computeTokens", status: http.StatusNotFound, grpcStatus: "NOT_FOUND"},
+		{path: "/v1beta/models/claude-haiku-5-5", status: http.StatusNotFound, grpcStatus: "NOT_FOUND"},
+		// Served actions still reach channel selection (no channel in this DB).
+		{path: "/v1/models/claude-haiku-5-5:generateContent", status: http.StatusServiceUnavailable},
+		{path: "/v1beta/models/claude-haiku-5-5:streamGenerateContent", status: http.StatusServiceUnavailable},
+		{path: "/v1/models/gemini-embedding-001:embedContent", status: http.StatusServiceUnavailable},
+	} {
+		t.Run(testCase.path, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, testCase.path, strings.NewReader(`{"contents":[{"parts":[{"text":"hi"}]}]}`))
+			request.Header.Set("x-goog-api-key", "geminiactionkey")
+			recorder := httptest.NewRecorder()
+			engine.ServeHTTP(recorder, request)
+
+			require.Equal(t, testCase.status, recorder.Code, recorder.Body.String())
+			if testCase.grpcStatus == "" {
+				assert.Contains(t, recorder.Body.String(), `"code":"model_not_found"`)
+				return
+			}
+			var payload struct {
+				Error struct {
+					Code    int    `json:"code"`
+					Message string `json:"message"`
+					Status  string `json:"status"`
+				} `json:"error"`
+			}
+			require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &payload))
+			assert.Equal(t, testCase.status, payload.Error.Code)
+			assert.Equal(t, testCase.grpcStatus, payload.Error.Status)
+			assert.NotEmpty(t, payload.Error.Message)
+		})
+	}
+}
+
 func setupRelayRouterTestDB(t *testing.T) {
 	t.Helper()
 

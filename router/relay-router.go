@@ -1,6 +1,8 @@
 package router
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/QuantumNous/new-api/constant"
@@ -69,6 +71,7 @@ func SetRelayRouter(router *gin.Engine) {
 		playgroundRouter.POST("/chat/completions", controller.Playground)
 	}
 	relayV1Router := router.Group("/v1")
+	relayV1Router.Use(rejectUnservedGeminiAction)
 	relayV1Router.Use(middleware.RouteTag("relay"))
 	relayV1Router.Use(middleware.SystemPerformanceCheck())
 	relayV1Router.Use(middleware.TokenAuth())
@@ -191,15 +194,7 @@ func SetRelayRouter(router *gin.Engine) {
 	//relayMjRouter.Use()
 
 	relayGeminiRouter := router.Group("/v1beta")
-	// :countTokens is not implemented. Answer it like an unregistered route
-	// before auth/channel selection instead of silently relaying it as
-	// generateContent (#7283).
-	relayGeminiRouter.Use(func(c *gin.Context) {
-		if strings.HasSuffix(c.Request.URL.Path, ":countTokens") {
-			controller.RelayNotFound(c)
-			c.Abort()
-		}
-	})
+	relayGeminiRouter.Use(rejectUnservedGeminiAction)
 	// Veo's :predictLongRunning goes to the plugin route that declares it (the
 	// google plugin's POST /v1beta/models/:model) before this group's auth,
 	// rate limit and channel selection; without one it stays with the relay.
@@ -219,6 +214,53 @@ func SetRelayRouter(router *gin.Engine) {
 			controller.Relay(c, types.RelayFormatGemini)
 		})
 	}
+}
+
+// geminiServedActions are the Gemini `models/{model}:{action}` actions the relay
+// runs. The relay sends every Gemini-format request upstream as generation or
+// embedding whatever the action says, so any other action (countTokens above
+// all, which google-genai calls on its own) would run the model and be billed.
+// :predictLongRunning is handed to the google plugin route.
+var geminiServedActions = map[string]struct{}{
+	"generateContent":       {},
+	"streamGenerateContent": {},
+	"embedContent":          {},
+	"batchEmbedContents":    {},
+	"predict":               {},
+	"predictLongRunning":    {},
+}
+
+// rejectUnservedGeminiAction answers POST models/{model}:{action} for an action
+// the relay does not serve with a Gemini-format error before auth, channel
+// selection and billing run.
+//
+// :countTokens is refused instead of forwarded: the Gemini adaptor builds only
+// generate/embed upstream URLs, the model names clients count against here are
+// mostly Claude/GPT served by channels with no Gemini countTokens, and the
+// Anthropic count_tokens route is disabled. 501 tells the SDK it is
+// unsupported rather than a wrong model name.
+func rejectUnservedGeminiAction(c *gin.Context) {
+	if c.Request.Method != http.MethodPost {
+		return
+	}
+	path := c.Request.URL.Path
+	if !strings.HasPrefix(path, "/v1/models/") && !strings.HasPrefix(path, "/v1beta/models/") {
+		return
+	}
+	lastSegment := path[strings.LastIndex(path, "/")+1:]
+	action := ""
+	if index := strings.LastIndex(lastSegment, ":"); index >= 0 {
+		action = lastSegment[index+1:]
+	}
+	if _, ok := geminiServedActions[action]; ok {
+		return
+	}
+	status, code, message := http.StatusNotFound, "NOT_FOUND", fmt.Sprintf("Method not found: %s %s", c.Request.Method, path)
+	if action == "countTokens" {
+		status, code, message = http.StatusNotImplemented, "UNIMPLEMENTED", "countTokens is not supported by this API; no tokens were counted or billed"
+	}
+	c.Header("Cache-Control", "no-store")
+	c.AbortWithStatusJSON(status, gin.H{"error": gin.H{"code": status, "message": message, "status": code}})
 }
 
 func registerMjRouterGroup(relayMjRouter *gin.RouterGroup) {
