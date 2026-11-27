@@ -21,6 +21,11 @@ type ClaudeSettings struct {
 	DefaultMaxTokens                      map[string]int                 `json:"default_max_tokens"`
 	ThinkingAdapterEnabled                bool                           `json:"thinking_adapter_enabled"`
 	ThinkingAdapterBudgetTokensPercentage float64                        `json:"thinking_adapter_budget_tokens_percentage"`
+	// SamplingUnsupportedModels lists model name fragments whose upstream
+	// rejects temperature other than 1, top_p and top_k on the Messages API.
+	// Matched case-insensitively as a substring, so Bedrock/Vertex ids that
+	// embed the model name match too.
+	SamplingUnsupportedModels []string `json:"sampling_unsupported_models"`
 }
 
 // 默认配置
@@ -31,6 +36,10 @@ var defaultClaudeSettings = ClaudeSettings{
 		"default": 8192,
 	},
 	ThinkingAdapterBudgetTokensPercentage: 0.8,
+	// Measured on production 2026-11-27: these two return 400 "does not
+	// support non-default temperature / top_p / top_k"; claude-opus-5-5,
+	// claude-fable-5-2 and claude-sonnet-5 accept them.
+	SamplingUnsupportedModels: []string{"claude-haiku-5-5", "claude-sonnet-5-5"},
 }
 
 // 全局实例
@@ -88,6 +97,19 @@ func (c *ClaudeSettings) GetDefaultMaxTokens(model string) int {
 		return maxTokens
 	}
 	return c.DefaultMaxTokens["default"]
+}
+
+// RejectsSamplingControls reports whether the upstream model refuses
+// temperature, top_p and top_k (see SamplingUnsupportedModels).
+func (c *ClaudeSettings) RejectsSamplingControls(model string) bool {
+	model = strings.ToLower(model)
+	for _, fragment := range c.SamplingUnsupportedModels {
+		fragment = strings.ToLower(strings.TrimSpace(fragment))
+		if fragment != "" && strings.Contains(model, fragment) {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidateClaudeDefaultMaxTokens validates the JSON persisted by the option

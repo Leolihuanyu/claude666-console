@@ -41,6 +41,7 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 	if err := helper.ApplyReasoningModelSuffix(c, info, request); err != nil {
 		return newConvertRequestFailedError(c, info, err)
 	}
+	removeUnsupportedClaudeSampling(c, info, request)
 
 	adaptor := GetAdaptor(info.ApiType)
 	if adaptor == nil {
@@ -154,4 +155,32 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 
 	service.PostTextConsumeQuota(c, info, usage.(*dto.Usage), nil)
 	return nil
+}
+
+// removeUnsupportedClaudeSampling drops temperature, top_p and top_k for models
+// whose upstream refuses them (claude.sampling_unsupported_models), as the
+// chat-to-Claude conversion already does, so clients that always send a
+// temperature (Aider, litellm) get an answer instead of a 400. temperature 1 is
+// the default and dropping it changes nothing. Body pass-through is left as
+// sent. These models refuse the fields with thinking on or off, so a thinking
+// request loses nothing it could have used.
+func removeUnsupportedClaudeSampling(c *gin.Context, info *relaycommon.RelayInfo, request *dto.ClaudeRequest) {
+	if request.Temperature == nil && request.TopP == nil && request.TopK == nil {
+		return
+	}
+	if model_setting.GetGlobalSettings().PassThroughRequestEnabled || info.ChannelSetting.PassThroughBodyEnabled {
+		return
+	}
+	if !model_setting.GetClaudeSettings().RejectsSamplingControls(info.UpstreamModelName) {
+		return
+	}
+	request.Temperature, request.TopP, request.TopK = nil, nil, nil
+	info.RecordConversionDiagnostics(c, []types.ConversionDiagnostic{{
+		Code:     "claude_sampling_removed",
+		Path:     "temperature/top_p/top_k",
+		Message:  fmt.Sprintf("model %q does not accept temperature, top_p or top_k", info.UpstreamModelName),
+		Severity: types.ConversionDiagnosticWarning,
+		From:     types.RelayFormatClaude,
+		To:       types.RelayFormatClaude,
+	}})
 }
