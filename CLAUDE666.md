@@ -66,3 +66,12 @@ Changes made in this fork (branch `claude666`):
   `/v1/models/{m}:countTokens` (google-genai's default `v1`) ran as a billed
   generateContent; consume logs with `other.request_path` ending in
   `:countTokens` are those requests.
+- Claude models that refuse sampling controls: option
+  `claude.sampling_unsupported_models` (JSON array of model-name fragments,
+  case-insensitive substring match, default `["claude-haiku-5-5",
+  "claude-sonnet-5-5"]`, `setting/model_setting/claude.go`). Native
+  `/v1/messages` requests to a matching upstream model have `temperature`,
+  `top_p` and `top_k` removed before conversion (`removeUnsupportedClaudeSampling`
+  in `relay/claude_handler.go`, logged as conversion diagnostic
+  `claude_sampling_removed`), like the chat conversion already did. Body
+  pass-through is not touched. No console UI yet; set it with `PUT /api/option`.
