@@ -222,17 +222,18 @@ func (e *NewAPIError) ToClaudeError(upstreamURLs ...string) ClaudeError {
 		if openAIError, ok := e.RelayError.(OpenAIError); ok {
 			result = ClaudeError{
 				Message: e.Error(),
-				Type:    fmt.Sprintf("%v", openAIError.Code),
+				Type:    claudeErrorType(openAIError.Type, e.StatusCode),
 			}
 		}
 	case ErrorTypeClaudeError:
 		if claudeError, ok := e.RelayError.(ClaudeError); ok {
 			result = claudeError
+			result.Type = claudeErrorType(claudeError.Type, e.StatusCode)
 		}
 	default:
 		result = ClaudeError{
 			Message: e.Error(),
-			Type:    string(e.errorType),
+			Type:    claudeErrorType("", e.StatusCode),
 		}
 	}
 	if e.errorCode != ErrorCodeCountTokenFailed {
@@ -242,6 +243,53 @@ func (e *NewAPIError) ToClaudeError(upstreamURLs ...string) ClaudeError {
 		result.Message = string(e.errorType)
 	}
 	return result
+}
+
+// claudeErrorTypes are the error.type values of the Anthropic API
+// (https://docs.claude.com/en/api/errors).
+var claudeErrorTypes = map[string]struct{}{
+	"invalid_request_error": {},
+	"authentication_error":  {},
+	"billing_error":         {},
+	"permission_error":      {},
+	"not_found_error":       {},
+	"request_too_large":     {},
+	"rate_limit_error":      {},
+	"timeout_error":         {},
+	"api_error":             {},
+	"overloaded_error":      {},
+}
+
+// claudeErrorType keeps an Anthropic error type and otherwise derives one from
+// the status code as Anthropic assigns them. Gateway codes such as
+// model_not_found and an upstream error without a type (which used to be
+// written as "<nil>") are not Anthropic types.
+func claudeErrorType(errorType string, statusCode int) string {
+	if _, ok := claudeErrorTypes[errorType]; ok {
+		return errorType
+	}
+	switch statusCode {
+	case http.StatusBadRequest, http.StatusUnprocessableEntity:
+		return "invalid_request_error"
+	case http.StatusUnauthorized:
+		return "authentication_error"
+	case http.StatusPaymentRequired:
+		return "billing_error"
+	case http.StatusForbidden:
+		return "permission_error"
+	case http.StatusNotFound:
+		return "not_found_error"
+	case http.StatusRequestEntityTooLarge:
+		return "request_too_large"
+	case http.StatusTooManyRequests:
+		return "rate_limit_error"
+	case http.StatusGatewayTimeout:
+		return "timeout_error"
+	case 529:
+		return "overloaded_error"
+	default:
+		return "api_error"
+	}
 }
 
 type NewAPIErrorOptions func(*NewAPIError)
