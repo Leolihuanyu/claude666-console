@@ -92,3 +92,8 @@ Changes made in this fork (branch `claude666`):
   in `relay/claude_handler.go`, logged as conversion diagnostic
   `claude_sampling_removed`), like the chat conversion already did. Body
   pass-through is not touched. No console UI yet; set it with `PUT /api/option`.
+- `GET /v1/models/{id}` (`RetrieveModel` in `controller/model.go`) looks the
+  model up in the token's own list (`userVisibleModels`, shared with
+  `ListModels`) instead of a static built-in list: 200 with the model object
+  (Anthropic format with `x-api-key` + `anthropic-version`), otherwise 404
+  (`model_not_found`, or Anthropic `not_found_error`).

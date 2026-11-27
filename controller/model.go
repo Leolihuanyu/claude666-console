@@ -215,7 +215,10 @@ func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 	}, nil
 }
 
-func ListModels(c *gin.Context, modelType int) {
+// userVisibleModels returns the models the request's token may call, in the
+// order GET /v1/models lists them: enabled for the user's groups, allowed by
+// the token's model limit and priced unless unpriced models are accepted.
+func userVisibleModels(c *gin.Context) ([]dto.OpenAIModels, error) {
 	acceptUnsetRatioModel := operation_setting.SelfUseModeEnabled
 	if !acceptUnsetRatioModel {
 		userId := c.GetInt("id")
@@ -230,11 +233,7 @@ func ListModels(c *gin.Context, modelType int) {
 	userModelNames := make([]string, 0)
 	groups, err := getModelListGroups(c)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "get user group failed",
-		})
-		return
+		return nil, err
 	}
 	ownerGroups := groups.ownerGroups
 	modelLimitEnable := common.GetContextKeyBool(c, constant.ContextKeyTokenModelLimitEnabled)
@@ -269,6 +268,18 @@ func ListModels(c *gin.Context, modelType int) {
 	userOpenAiModels := make([]dto.OpenAIModels, 0, len(userModelNames))
 	for _, modelName := range userModelNames {
 		userOpenAiModels = append(userOpenAiModels, buildOpenAIModel(modelName, ownerByModel))
+	}
+	return userOpenAiModels, nil
+}
+
+func ListModels(c *gin.Context, modelType int) {
+	userOpenAiModels, err := userVisibleModels(c)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "get user group failed",
+		})
+		return
 	}
 
 	switch modelType {
@@ -345,29 +356,47 @@ func EnabledListModels(c *gin.Context) {
 	})
 }
 
+// RetrieveModel answers GET /v1/models/{id} from the same list as ListModels,
+// so a model the token can call is found and any other model is a 404.
 func RetrieveModel(c *gin.Context, modelType int) {
 	modelId := c.Param("model")
-	if aiModel, ok := openAIModelsMap[modelId]; ok {
-		switch modelType {
-		case constant.ChannelTypeAnthropic:
-			c.JSON(200, dto.AnthropicModel{
+	userOpenAiModels, err := userVisibleModels(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": types.OpenAIError{
+			Message: "get user group failed",
+			Type:    "new_api_error",
+			Code:    "get_user_group_failed",
+		}})
+		return
+	}
+	for _, aiModel := range userOpenAiModels {
+		if aiModel.Id != modelId {
+			continue
+		}
+		if modelType == constant.ChannelTypeAnthropic {
+			c.JSON(http.StatusOK, dto.AnthropicModel{
 				ID:          aiModel.Id,
 				CreatedAt:   time.Unix(int64(aiModel.Created), 0).UTC().Format(time.RFC3339),
 				DisplayName: aiModel.Id,
 				Type:        "model",
 			})
-		default:
-			c.JSON(200, aiModel)
+			return
 		}
-	} else {
-		openAIError := types.OpenAIError{
-			Message: fmt.Sprintf("The model '%s' does not exist", modelId),
-			Type:    "invalid_request_error",
-			Param:   "model",
-			Code:    "model_not_found",
-		}
-		c.JSON(200, gin.H{
-			"error": openAIError,
-		})
+		c.JSON(http.StatusOK, aiModel)
+		return
 	}
+	message := fmt.Sprintf("The model '%s' does not exist", modelId)
+	if modelType == constant.ChannelTypeAnthropic {
+		c.JSON(http.StatusNotFound, gin.H{
+			"type":  "error",
+			"error": gin.H{"type": "not_found_error", "message": message},
+		})
+		return
+	}
+	c.JSON(http.StatusNotFound, gin.H{"error": types.OpenAIError{
+		Message: message,
+		Type:    "invalid_request_error",
+		Param:   "model",
+		Code:    "model_not_found",
+	}})
 }
