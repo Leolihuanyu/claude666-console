@@ -27,6 +27,7 @@ import {
   Copy,
   Link,
   Loader2,
+  Plug,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -175,8 +176,29 @@ export function DataTableRowActions<TData>({
     statusIcon = <PowerOff className='size-4' />
   }
 
+  const handleOpenSetupWizard = async () => {
+    const realKey = await resolveRealKey(apiKey.id)
+    if (!realKey) return
+    setResolvedKey(realKey)
+    setCurrentRow(apiKey)
+    setOpen('setup-wizard')
+  }
+
   return (
     <div className='-ml-1.5 flex items-center gap-1'>
+      <Button
+        variant='outline'
+        size='sm'
+        onClick={handleOpenSetupWizard}
+        disabled={isRealKeyLoading}
+      >
+        {isRealKeyLoading ? (
+          <Loader2 className='animate-spin' aria-hidden='true' />
+        ) : (
+          <Plug aria-hidden='true' />
+        )}
+        {t('One-click setup')}
+      </Button>
       <Tooltip>
         <TooltipTrigger
           render={

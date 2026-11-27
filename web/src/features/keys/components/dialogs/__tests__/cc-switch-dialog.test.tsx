@@ -124,4 +124,21 @@ describe('CC Switch model selection', () => {
     expect(input).toHaveValue('Development')
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
+
+  it('imports a Claude provider with no model and a balance script', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    renderDialog()
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Open CC Switch' }))
+
+    expect(open).toHaveBeenCalledTimes(1)
+    const url = new URL(String(open.mock.calls[0][0]))
+    expect(url.searchParams.get('app')).toBe('claude')
+    expect(url.searchParams.get('apiKey')).toBe('sk-test-only')
+    expect(url.searchParams.has('model')).toBe(false)
+    expect(url.searchParams.get('usageEnabled')).toBe('true')
+    expect(url.searchParams.get('usageScript')).not.toBeNull()
+    open.mockRestore()
+  })
 })

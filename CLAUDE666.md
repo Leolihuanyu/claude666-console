@@ -104,3 +104,24 @@ Changes made in this fork (branch `claude666`):
   `(request id: …)` from the message to the server log, so the client sees
   only ours, and appends `(param: …)` when the upstream names one outside
   the message.
+- Setup wizard ("一键接入") on the keys page: a button on every key row opens
+  `SetupWizardDialog` (`web/src/features/keys/components/setup-wizard/`). The
+  customer picks an app from an icon grid with search, then gets one of four
+  guides: the site's setup script (`curl -fsSL https://leoapi.ai/setup.sh |
+  bash` / `irm https://leoapi.ai/setup.ps1 | iex`, which asks for the key; the
+  command carries none), one-click import buttons (CC Switch, Cherry Studio
+  with `type: new-api`, Chatbox, NextChat), a card of values with copy buttons
+  and steps, or "not supported" with alternatives. The clients are data in
+  `web/src/features/keys/lib/setup-clients.ts` (add a client there); address
+  spellings and links are built in `setup-links.ts` from the setup table in
+  leoapi-ops (`docs/clients/`, tested 2026-11-27). Links and snippets are built
+  in the browser from the key the page already fetches; the key is masked on
+  screen, copied in full, never put into an `href` or browser storage, and no
+  new backend endpoint was added. Snippets use the key's own model list
+  (default `claude-sonnet-5-5`, else the first model). Cursor is marked
+  experimental (Claude through our address is untested); Coze SaaS is
+  "not verified". Screenshot slots are empty for now.
+- CC Switch dialog: every model field is optional, and the link carries a
+  balance script (`ccSwitchUsageScript`) that asks `/api/usage/token/` with
+  the key itself instead of the guide's `/api/user/self`, which would need the
+  account's system access token in the link.

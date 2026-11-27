@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
@@ -27,16 +26,19 @@ import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { useChatPresets } from '@/features/chat/hooks/use-chat-presets'
+import { useStatus } from '@/hooks/use-status'
 import { getUserModels } from '@/lib/api'
-import { apiBaseUrl } from '@/lib/claude666'
 import { requireServerSuccess } from '@/lib/server-error-message'
+
+import { buildCcSwitchUrl, type CcSwitchModels } from '../../lib/setup-links'
 
 const APP_CONFIGS = {
   claude: {
     label: 'Claude',
     defaultName: 'My Claude',
     modelFields: [
-      { key: 'model', labelKey: 'Primary Model', required: true },
+      { key: 'model', labelKey: 'Primary Model', required: false },
       { key: 'haikuModel', labelKey: 'Haiku Model', required: false },
       { key: 'sonnetModel', labelKey: 'Sonnet Model', required: false },
       { key: 'opusModel', labelKey: 'Opus Model', required: false },
@@ -45,51 +47,16 @@ const APP_CONFIGS = {
   codex: {
     label: 'Codex',
     defaultName: 'My Codex',
-    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: true }],
+    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: false }],
   },
   gemini: {
     label: 'Gemini',
     defaultName: 'My Gemini',
-    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: true }],
+    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: false }],
   },
 } as const
 
 type AppType = keyof typeof APP_CONFIGS
-
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return apiBaseUrl(status.server_address)
-    }
-  } catch {
-    /* empty */
-  }
-  return apiBaseUrl(window.location.origin)
-}
-
-function buildCCSwitchURL(
-  app: string,
-  name: string,
-  models: Record<string, string>,
-  apiKey: string
-): string {
-  const serverAddress = getServerAddress()
-  const endpoint = app === 'codex' ? `${serverAddress}/v1` : serverAddress
-  const params = new URLSearchParams()
-  params.set('resource', 'provider')
-  params.set('app', app)
-  params.set('name', name)
-  params.set('endpoint', endpoint)
-  params.set('apiKey', apiKey)
-  for (const [k, v] of Object.entries(models)) {
-    if (v) params.set(k, v)
-  }
-  params.set('homepage', serverAddress)
-  params.set('enabled', 'true')
-  return `ccswitch://v1/import?${params.toString()}`
-}
 
 interface Props {
   open: boolean
@@ -99,6 +66,8 @@ interface Props {
 
 export function CCSwitchDialog(props: Props) {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  const { serverAddress } = useChatPresets()
   const [app, setApp] = useState<AppType>('claude')
   const [name, setName] = useState<string>(APP_CONFIGS.claude.defaultName)
   const [models, setModels] = useState<Record<string, string>>({})
@@ -135,15 +104,21 @@ export function CCSwitchDialog(props: Props) {
     setModels({})
   }
 
+  // Every model field is optional: Claude Code keeps its own model list when
+  // they are empty (CC Switch site integration guide).
   const handleSubmit = () => {
-    if (!models.model) {
-      toast.warning(t('Please select a primary model'))
-      return
-    }
     const key = props.tokenKey.startsWith('sk-')
       ? props.tokenKey
       : `sk-${props.tokenKey}`
-    const url = buildCCSwitchURL(app, name, models, key)
+    const url = buildCcSwitchUrl({
+      app,
+      name,
+      baseUrl: serverAddress,
+      apiKey: key,
+      models: models as CcSwitchModels,
+      quotaPerUnit:
+        status?.quota_per_unit ?? status?.data?.quota_per_unit ?? 500000,
+    })
     window.open(url, '_blank')
     props.onOpenChange(false)
   }
@@ -198,6 +173,16 @@ export function CCSwitchDialog(props: Props) {
             placeholder={currentConfig.defaultName}
           />
         </div>
+
+        <p className='text-muted-foreground text-xs'>
+          {app === 'claude'
+            ? t(
+                'Leave the models empty to keep the Claude Code defaults. Your balance shows on the CC Switch card.'
+              )
+            : t(
+                'Pick a model this key can use. Your balance shows on the CC Switch card.'
+              )}
+        </p>
 
         {currentConfig.modelFields.map((field) => (
           <div key={field.key} className='space-y-2'>
