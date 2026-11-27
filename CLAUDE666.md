@@ -86,3 +86,8 @@ Changes made in this fork (branch `claude666`):
   and reasoning details) via `OpenAIResponsesResponse.WireUsage`
   (`relaykit/dto/openai_response.go`); the chat-format and billing fields stay
   on the state usage the host bills from.
+- `GET /v1/models/{id}` (`RetrieveModel` in `controller/model.go`) looks the
+  model up in the token's own list (`userVisibleModels`, shared with
+  `ListModels`) instead of a static built-in list: 200 with the model object
+  (Anthropic format with `x-api-key` + `anthropic-version`), otherwise 404
+  (`model_not_found`, or Anthropic `not_found_error`).

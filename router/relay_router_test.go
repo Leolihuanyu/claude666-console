@@ -13,6 +13,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	"github.com/QuantumNous/new-api/plugins"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -142,6 +143,53 @@ func TestGeminiRelayHandsLongRunningPredictionToPluginRoute(t *testing.T) {
 			// The relay looks for a Gemini channel serving the model; there is none.
 			assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 			assert.Contains(t, recorder.Body.String(), `"code":"model_not_found"`)
+		})
+	}
+}
+
+// GET /v1/models/{id} used to answer 200 with a "does not exist" error for
+// every model outside a static built-in list, including models on sale.
+func TestRetrieveModelFindsModelsTheTokenCanCall(t *testing.T) {
+	setupRelayRouterTestDB(t)
+	previousSelfUse := operation_setting.SelfUseModeEnabled
+	operation_setting.SelfUseModeEnabled = true // skips the pricing check
+	t.Cleanup(func() { operation_setting.SelfUseModeEnabled = previousSelfUse })
+
+	user := model.User{Username: "retrieve-user", Status: common.UserStatusEnabled, Group: "default", Quota: 100}
+	require.NoError(t, model.DB.Create(&user).Error)
+	require.NoError(t, model.DB.Create(&model.Token{UserId: user.Id, Key: "retrievekey", Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true}).Error)
+	require.NoError(t, model.DB.Create(&model.Ability{Group: "default", Model: "claude-haiku-5-5", ChannelId: 1, Enabled: true}).Error)
+
+	engine := gin.New()
+	SetRelayRouter(engine)
+
+	for _, testCase := range []struct {
+		name      string
+		path      string
+		anthropic bool
+		status    int
+		body      string
+	}{
+		{name: "OpenAI format", path: "/v1/models/claude-haiku-5-5", status: http.StatusOK, body: `"id":"claude-haiku-5-5"`},
+		{name: "Anthropic format", path: "/v1/models/claude-haiku-5-5", anthropic: true, status: http.StatusOK, body: `"type":"model"`},
+		{name: "unknown model", path: "/v1/models/no-such-model", status: http.StatusNotFound, body: `"code":"model_not_found"`},
+		{name: "unknown model, Anthropic format", path: "/v1/models/no-such-model", anthropic: true, status: http.StatusNotFound, body: `"type":"not_found_error"`},
+		// gpt-4o is in the static built-in list but has no channel here.
+		{name: "built-in model without a channel", path: "/v1/models/gpt-4o", status: http.StatusNotFound, body: `"code":"model_not_found"`},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, testCase.path, nil)
+			if testCase.anthropic {
+				request.Header.Set("x-api-key", "retrievekey")
+				request.Header.Set("anthropic-version", "2023-06-01")
+			} else {
+				request.Header.Set("Authorization", "Bearer retrievekey")
+			}
+			recorder := httptest.NewRecorder()
+			engine.ServeHTTP(recorder, request)
+
+			assert.Equal(t, testCase.status, recorder.Code)
+			assert.Contains(t, recorder.Body.String(), testCase.body)
 		})
 	}
 }
